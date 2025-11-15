@@ -1,37 +1,33 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { PerformanceService } from './performance.service';
+import { CreateTemplateDto, CreateEvaluationDto, SubmitDisputeDto } from './dto';
 
 @Controller('performance')
 export class PerformanceController {
-  constructor(private readonly performanceService: PerformanceService) {}
+  constructor(private readonly service: PerformanceService) {}
 
-  @Post('setup')
-  setupAppraisal(@Body() body: any) {
-    return this.performanceService.setupAppraisal(body);
+  @Post('template')
+  createTemplate(@Body() dto: CreateTemplateDto) {
+    return this.service.createTemplate(dto);
   }
 
-  @Post('evaluate/:employeeId')
-  evaluateEmployee(@Param('employeeId') employeeId: string, @Body() body: any) {
-    return this.performanceService.evaluateEmployee(employeeId, body);
+  @Post('evaluation')
+  createEvaluation(@Body() dto: CreateEvaluationDto) {
+    return this.service.createEvaluation(dto);
+  }
+
+  @Post('dispute')
+  submitDispute(@Body() dto: SubmitDisputeDto) {
+    return this.service.submitDispute(dto);
   }
 
   @Get('evaluations')
-  getAllEvaluations() {
-    return this.performanceService.getAllEvaluations();
+  getEvaluations() {
+    return this.service.getEvaluations();
   }
 
-  @Get('feedback/:employeeId')
-  getFeedback(@Param('employeeId') employeeId: string) {
-    return this.performanceService.getFeedback(employeeId);
-  }
-
-  @Post('dispute/:employeeId')
-  submitDispute(@Param('employeeId') employeeId: string, @Body() body: any) {
-    return this.performanceService.submitDispute(employeeId, body);
-  }
-
-  @Post('archive')
-  archiveAppraisals(@Body() body: any) {
-    return this.performanceService.archiveAppraisals(body);
+  @Get('disputes')
+  getDisputes() {
+    return this.service.getDisputes();
   }
 }

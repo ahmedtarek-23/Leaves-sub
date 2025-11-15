@@ -1,65 +1,39 @@
-// performance.service.ts
 import { Injectable } from '@nestjs/common';
+import { Evaluation, EvaluationDocument } from './schema/evaluation.schema';
+import { Template, TemplateDocument } from './schema/template.schema';
+import { Dispute, DisputeDocument } from './schema/dispute.schema';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { CreateTemplateDto, CreateEvaluationDto, SubmitDisputeDto } from './dto';
 
 @Injectable()
 export class PerformanceService {
+  constructor(
+    @InjectModel(Template.name) private templateModel: Model<TemplateDocument>,
+    @InjectModel(Evaluation.name) private evaluationModel: Model<EvaluationDocument>,
+    @InjectModel(Dispute.name) private disputeModel: Model<DisputeDocument>,
+  ) {}
 
-  // Phase 1: Planning & Setup
-  setupAppraisal(data: any) {
-    return {
-      message: 'Dummy response for appraisal setup',
-      received: data,
-      status: 'Setup created successfully',
-    };
+  async createTemplate(dto: CreateTemplateDto) {
+    const template = new this.templateModel(dto);
+    return template.save();
   }
 
-  // Phase 2: Evaluation & Review
-  evaluateEmployee(employeeId: string, data: any) {
-    return {
-      message: `Dummy response for evaluation of employee ${employeeId}`,
-      received: data,
-      status: 'Evaluation saved successfully',
-    };
+  async createEvaluation(dto: CreateEvaluationDto) {
+    const evaluation = new this.evaluationModel(dto);
+    return evaluation.save();
   }
 
-  // Get all evaluations (dashboard)
-  getAllEvaluations() {
-    return {
-      message: 'Dummy response for all evaluations',
-      data: [
-        { employeeId: 1, rating: 'Pending' },
-        { employeeId: 2, rating: 'Pending' },
-      ],
-    };
+  async submitDispute(dto: SubmitDisputeDto) {
+    const dispute = new this.disputeModel({ ...dto, status: 'Open' });
+    return dispute.save();
   }
 
-  // Phase 3: Feedback & Acknowledgment
-  getFeedback(employeeId: string) {
-    return {
-      message: `Dummy feedback for employee ${employeeId}`,
-      feedback: {
-        rating: 'Pending',
-        comments: 'No comments yet',
-        developmentNotes: 'No notes yet',
-      },
-    };
+  async getEvaluations() {
+    return this.evaluationModel.find().populate('templateId');
   }
 
-  // Phase 4: Dispute & Resolution
-  submitDispute(employeeId: string, data: any) {
-    return {
-      message: `Dummy dispute submitted for employee ${employeeId}`,
-      received: data,
-      status: 'Dispute logged successfully',
-    };
-  }
-
-  // Phase 5: Closure & Archiving
-  archiveAppraisals(data: any) {
-    return {
-      message: 'Dummy response for archiving appraisals',
-      archivedDataCount: data?.count || 0,
-      status: 'Appraisals archived successfully',
-    };
+  async getDisputes() {
+    return this.disputeModel.find().populate('evaluationId');
   }
 }

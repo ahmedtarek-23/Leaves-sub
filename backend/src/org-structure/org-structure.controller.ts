@@ -1,5 +1,6 @@
 import { Controller, Post, Patch, Get, Body, Param } from '@nestjs/common';
 import { OrgStructureService } from './org-structure.service';
+import { DeactivatePositionDto } from './dto/deactivate-pos.dto';
 
 @Controller('org-structure')
 export class OrgStructureController {
@@ -21,9 +22,13 @@ export class OrgStructureController {
   }
 
   @Patch('pos/:id/deactivate')
-  deactivate(@Param('id') id: string) {
-    return this.svc.deactivatePosition(id);
-  }
+deactivate(
+  @Param('id') id: string,
+  @Body() body: DeactivatePositionDto
+) {
+  return this.svc.deactivatePosition(id, body);
+}
+
 
   @Patch('dept/:id')
   rename(@Param('id') id: string, @Body() body: any) {
