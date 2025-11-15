@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class OrgStructureService {
   getOrgChart() {
-    throw new Error('Method not implemented.');
+    return { ok: true, msg: 'dummy org chart fetched', data: [] };
   }
 
   createDept(data: any) {
@@ -15,12 +15,24 @@ export class OrgStructureService {
   }
 
   updateReportingLine(posId: string, bossId: string) {
-    return { ok: true, msg: 'dummy reporting line updated', posId, bossId };
+    return { 
+      ok: true, 
+      msg: 'dummy reporting line updated', 
+      posId, 
+      bossId 
+    };
   }
 
   deactivatePosition(id: string) {
-    return { ok: true, msg: 'dummy deactivated pos', id };
+    return { ok: true, msg: 'dummy pos deactivated', id };
   }
 
   renameDept(id: string, newName: string) {
-    return { ok: true, msg: 'dummy dept renamed'
+    return { 
+      ok: true, 
+      msg: 'dummy dept renamed', 
+      id, 
+      newName 
+    };
+  }
+}
