@@ -23,4 +23,10 @@ lerna-debug.log*
 .temp
 .tmp
 
+
+# ignore compiled output
+dist/
+
+# ignore map files
 *.js.map
+
