@@ -60,8 +60,4 @@ export class LeaveRequest extends Document {
   isSynced: boolean;
 }
 
-<<<<<<< HEAD
 export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);
-=======
-export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);
->>>>>>> 46699e5101064e3dc68149602b9bed0fde0307f7

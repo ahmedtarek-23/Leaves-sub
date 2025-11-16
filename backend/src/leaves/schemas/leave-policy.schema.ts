@@ -38,8 +38,4 @@ export class LeavePolicy extends Document {
   payrollPayCode: string; 
 }
 
-<<<<<<< HEAD
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);
-=======
-export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);
->>>>>>> 46699e5101064e3dc68149602b9bed0fde0307f7
