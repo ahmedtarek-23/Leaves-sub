@@ -30,3 +30,4 @@ dist/
 # ignore map files
 *.js.map
 
+.next/
