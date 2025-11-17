@@ -4,9 +4,12 @@ import { Model } from 'mongoose';
 import { Exception, ExceptionDocument } from './schemas/excetions.schema';
 import { CreateExceptionDto } from './dto/create-exception.dto';
 
-
-// Dummy data
-const employees = require('../external/employee.json');
+// Dummy employees for testing
+const dummyEmployees = [
+  { employeeId: 'E001', name: 'Alice' },
+  { employeeId: 'E002', name: 'Bob' },
+  { employeeId: 'E003', name: 'Charlie' },
+];
 
 @Injectable()
 export class ExceptionsService {
@@ -15,8 +18,9 @@ export class ExceptionsService {
     private exceptionModel: Model<ExceptionDocument>,
   ) {}
 
+  // Validate employee against dummy data
   validateEmployee(employeeId: string) {
-    const emp = employees.find(e => e.employeeId === employeeId);
+    const emp = dummyEmployees.find(e => e.employeeId === employeeId);
     if (!emp) {
       throw new Error(`Employee '${employeeId}' not found in dummy data`);
     }
@@ -32,6 +36,7 @@ export class ExceptionsService {
       type: dto.type,
       reason: dto.reason,
       value: dto.value,
+      status: 'PENDING', // default status
     });
 
     return exception.save();
@@ -46,7 +51,7 @@ export class ExceptionsService {
     );
   }
 
-  // ---- Get Pending ----
+  // ---- Get Pending Exceptions ----
   async getPending() {
     return this.exceptionModel.find({ status: 'PENDING' }).lean();
   }

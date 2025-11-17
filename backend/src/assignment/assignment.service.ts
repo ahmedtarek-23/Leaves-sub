@@ -3,7 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Assignment, AssignmentDocument } from './schema/assignment.schema';
 import { AssignShiftDto } from './dto/assign-shift.dto';
-const employees = require('../../external/employee_dummydata.json');
+
+// Dummy employees for testing
+const dummyEmployees = [
+  { employeeId: 'E001', name: 'Alice' },
+  { employeeId: 'E002', name: 'Bob' },
+  { employeeId: 'E003', name: 'Charlie' },
+];
 
 @Injectable()
 export class AssignmentService {
@@ -12,8 +18,9 @@ export class AssignmentService {
     private readonly assignmentModel: Model<AssignmentDocument>,
   ) {}
 
+  // Validate employee against dummy data
   validateEmployee(employeeId: string) {
-    const emp = (employees as any[]).find(e => e.employeeId === employeeId);
+    const emp = dummyEmployees.find(e => e.employeeId === employeeId);
 
     if (!emp) {
       throw new Error(`Employee '${employeeId}' not found in dummy data`);
@@ -22,8 +29,8 @@ export class AssignmentService {
     return emp;
   }
 
+  // Assign shift
   async assignShift(dto: AssignShiftDto) {
-    // validate employee using dummy data
     this.validateEmployee(dto.employeeId);
 
     const assignment = new this.assignmentModel({
@@ -37,10 +44,12 @@ export class AssignmentService {
     return assignment.save();
   }
 
+  // Get assignments for an employee
   async findAssignmentsForEmployee(employeeId: string) {
     return this.assignmentModel.find({ employeeId }).lean();
   }
 
+  // Remove an assignment
   async removeAssignment(id: string) {
     return this.assignmentModel.findByIdAndDelete(id).lean();
   }
