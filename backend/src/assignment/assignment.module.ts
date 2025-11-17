@@ -10,5 +10,6 @@ import { Assignment, AssignmentSchema } from './schema/assignment.schema';
   ],
   controllers: [AssignmentController],
   providers: [AssignmentService],
-})
+  exports: [AssignmentService],
+  })
 export class AssignmentModule {}

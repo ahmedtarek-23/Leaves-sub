@@ -15,5 +15,6 @@ import { Position, PositionSchema } from './schemas/position.schema';
   ],
   controllers: [OrgStructureController],
   providers: [OrgStructureService],
+   exports: [OrgStructureService],
 })
 export class OrgStructureModule {}

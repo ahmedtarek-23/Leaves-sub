@@ -5,9 +5,9 @@ import { LeavePolicy, LeavePolicySchema } from './schemas/leave-policy.schema';
 import { LeaveBalance, LeaveBalanceSchema } from './schemas/leave-balance.schema';
 import { LeaveRequest, LeaveRequestSchema } from './schemas/leave-request.schema';
 
-// Placeholder Imports for dependent modules (must be created by other teams/TL)
-import { TimeManagementModule } from '../time-management/time-management.module';
-import { PayrollProcessingModule } from '../payroll-processing/payroll-processing.module';
+import { EmployeeModule } from '../employee/employee.module';
+import { AttendanceModule } from '../attendance/attendance.module';
+//import { PayrollModule } from '../payroll/payroll.module';
 
 @Module({
   imports: [
@@ -19,8 +19,9 @@ import { PayrollProcessingModule } from '../payroll-processing/payroll-processin
     ]),
     
     // 2. Import dependent modules for integration foundation (M1)
-    TimeManagementModule,
-    PayrollProcessingModule,
+     EmployeeModule,
+    AttendanceModule,
+    //PayrollModule,
   ],
   providers: [LeavesService],
   exports: [LeavesService], // Export the service so other modules can use it

@@ -6,6 +6,8 @@ import { PerformanceController } from './performance.controller';
 import { Template, TemplateSchema } from './schema/template.schema';
 import { Evaluation, EvaluationSchema } from './schema/evaluation.schema';
 import { Dispute, DisputeSchema } from './schema/dispute.schema';
+import { EmployeeModule } from '../employee/employee.module';
+import { OrgStructureModule } from '../org-structure/org-structure.module';
 
 @Module({
   imports: [
@@ -14,8 +16,14 @@ import { Dispute, DisputeSchema } from './schema/dispute.schema';
       { name: Evaluation.name, schema: EvaluationSchema },
       { name: Dispute.name, schema: DisputeSchema },
     ]),
+    
+    EmployeeModule,
+    OrgStructureModule,
   ],
+
   controllers: [PerformanceController],
   providers: [PerformanceService],
+
+  exports: [PerformanceService],
 })
 export class PerformanceModule {}

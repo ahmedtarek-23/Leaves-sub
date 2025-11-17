@@ -8,6 +8,9 @@ import { ApplicationSchema } from './schemas/application.schema';
 import { InterviewSchema } from './schemas/interview.schema';
 import { OfferSchema } from './schemas/offer.schema';
 
+import { OrgStructureModule } from '../org-structure/org-structure.module';
+import { EmployeeModule } from '../employee/employee.module';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -17,9 +20,14 @@ import { OfferSchema } from './schemas/offer.schema';
       { name: 'Interview', schema: InterviewSchema },
       { name: 'Offer', schema: OfferSchema },
     ]),
+
+    OrgStructureModule,
+    EmployeeModule,
   ],
+
   controllers: [RecruitmentController],
   providers: [RecruitmentService],
+
   exports: [RecruitmentService],
 })
 export class RecruitmentModule {}

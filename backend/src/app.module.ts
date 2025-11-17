@@ -13,6 +13,9 @@ import { ExceptionsModule } from './exceptions/exceptions.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AssignmentModule } from './assignment/assignment.module';
 import { AvailabilityModule } from './availability/availability.module';
+import { LeavesModule } from './leaves/leaves.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
+
 
 @Module({
   imports: [
@@ -29,7 +32,9 @@ import { AvailabilityModule } from './availability/availability.module';
     ExceptionsModule,
     AttendanceModule,
     AssignmentModule,
-    AvailabilityModule
+    AvailabilityModule,
+    LeavesModule,
+    RecruitmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

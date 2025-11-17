@@ -12,5 +12,6 @@ import { Exception, ExceptionSchema } from './schemas/excetions.schema';
   ],
   controllers: [ExceptionsController],
   providers: [ExceptionsService],
+  exports: [ExceptionsService],
 })
 export class ExceptionsModule {}
