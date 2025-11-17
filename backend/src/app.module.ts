@@ -8,6 +8,11 @@ import { AppService } from './app.service';
 import { PerformanceModule } from './performance/performance.module';
 import { OrgStructureModule } from './org-structure/org-structure.module';
 import { EmployeeModule } from './employee/employee.module';
+import { ShiftModule } from './shift/shift.module';
+import { ExceptionsModule } from './exceptions/exceptions.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { AssignmentModule } from './assignment/assignment.module';
+import { AvailabilityModule } from './availability/availability.module';
 
 @Module({
   imports: [
@@ -20,6 +25,11 @@ import { EmployeeModule } from './employee/employee.module';
     PerformanceModule,
     OrgStructureModule,
     EmployeeModule,
+    ShiftModule,
+    ExceptionsModule,
+    AttendanceModule,
+    AssignmentModule,
+    AvailabilityModule
   ],
   controllers: [AppController],
   providers: [AppService],
