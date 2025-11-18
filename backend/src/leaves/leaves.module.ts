@@ -13,7 +13,7 @@ import {
 
 import { EmployeeModule } from '../employee/employee.module';
 import { AttendanceModule } from '../attendance/attendance.module';
-//import { PayrollModule } from '../payroll/payroll.module';
+import { PayrollModule } from '../payroll/payroll.module';
 
 @Module({
   imports: [
@@ -27,9 +27,9 @@ import { AttendanceModule } from '../attendance/attendance.module';
     // 2. Import dependent modules for integration foundation (M1)
     EmployeeModule,
     AttendanceModule,
-    //PayrollModule,
+    PayrollModule,
   ],
   providers: [LeavesService],
-  exports: [LeavesService], // Export the service so other modules can use it
+  exports: [LeavesService], 
 })
 export class LeavesModule {}
