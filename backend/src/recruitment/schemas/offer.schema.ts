@@ -25,7 +25,7 @@ export class Offer {
 
   @Prop({
     enum: ['DRAFT', 'APPROVED', 'SENT', 'ACCEPTED', 'REJECTED', 'EXPIRED'],
-    default: 'DRAFT'
+    default: 'DRAFT',
   })
   status: string;
 

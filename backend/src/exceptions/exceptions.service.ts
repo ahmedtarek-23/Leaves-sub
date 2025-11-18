@@ -20,7 +20,7 @@ export class ExceptionsService {
 
   // Validate employee against dummy data
   validateEmployee(employeeId: string) {
-    const emp = dummyEmployees.find(e => e.employeeId === employeeId);
+    const emp = dummyEmployees.find((e) => e.employeeId === employeeId);
     if (!emp) {
       throw new Error(`Employee '${employeeId}' not found in dummy data`);
     }

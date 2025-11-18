@@ -1,4 +1,11 @@
-import { IsString, IsArray, IsNumber, IsMongoId, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsNumber,
+  IsMongoId,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateJobRequisitionDto {
   @IsString()

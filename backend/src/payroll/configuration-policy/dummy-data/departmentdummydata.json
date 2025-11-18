@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Human Resources",
+    "code": "HR01",
+    "description": "Handles recruitment, payroll, and employee relations.",
+    "active": true
+  },
+  {
+    "name": "Engineering",
+    "code": "ENG01",
+    "description": "Responsible for product development, coding, and technical maintenance.",
+    "active": true
+  },
+  {
+    "name": "Marketing",
+    "code": "MKT01",
+    "description": "Manages marketing campaigns, brand strategy, and social media.",
+    "active": true
+  },
+  {
+    "name": "Finance",
+    "code": "FIN01",
+    "description": "Oversees accounting, budgeting, and financial planning.",
+    "active": true
+  },
+  {
+    "name": "Customer Support",
+    "code": "CS01",
+    "description": "Provides assistance and resolves customer inquiries and complaints.",
+    "active": true
+  },
+  {
+    "name": "Legal",
+    "code": "LEG01",
+    "description": "Manages contracts, compliance, and legal matters.",
+    "active": false
+  }
+]

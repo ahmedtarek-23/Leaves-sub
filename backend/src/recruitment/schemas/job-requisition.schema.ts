@@ -20,9 +20,9 @@ export class JobRequisition {
   @Prop({ required: true, min: 1 })
   openings: number;
 
-  @Prop({ 
+  @Prop({
     enum: ['DRAFT', 'PUBLISHED', 'CLOSED'],
-    default: 'DRAFT'
+    default: 'DRAFT',
   })
   status: string;
 
@@ -42,4 +42,5 @@ export class JobRequisition {
   active: boolean;
 }
 
-export const JobRequisitionSchema = SchemaFactory.createForClass(JobRequisition);
+export const JobRequisitionSchema =
+  SchemaFactory.createForClass(JobRequisition);

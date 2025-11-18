@@ -47,7 +47,6 @@ interface ShiftAssignment {
   restDays: string[];
 }
 
-
 @Injectable()
 export class AttendanceService implements OnModuleInit {
   private employees: Employee[] = [];
@@ -109,9 +108,7 @@ export class AttendanceService implements OnModuleInit {
   private getEmployee(employeeId: string): Employee {
     const employee = this.employees.find((e) => e.employeeId === employeeId);
     if (!employee) {
-      throw new NotFoundException(
-        `Employee with ID ${employeeId} not found`,
-      );
+      throw new NotFoundException(`Employee with ID ${employeeId} not found`);
     }
     return employee;
   }
@@ -375,5 +372,4 @@ export class AttendanceService implements OnModuleInit {
 
     return await attendance.save();
   }
-
 }

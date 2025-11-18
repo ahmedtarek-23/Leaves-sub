@@ -15,10 +15,12 @@ export class Evaluation {
   @Prop({ type: Types.ObjectId, ref: 'Template', required: true })
   templateId: Types.ObjectId;
 
-  @Prop([{ 
-    criterion: { type: String, required: true },
-    score: { type: Number, required: true } 
-  }])
+  @Prop([
+    {
+      criterion: { type: String, required: true },
+      score: { type: Number, required: true },
+    },
+  ])
   ratings: { criterion: string; score: number }[];
 
   @Prop()

@@ -7,14 +7,13 @@ export type ExceptionDocument = Exception & Document;
 export class Exception {
   @Prop({ required: true }) employeeId: string;
 
-
   @Prop({ required: true }) type: string;
 
   @Prop() reason: string;
 
   @Prop() value?: number;
 
-  @Prop({ default: "PENDING" }) status: string;
+  @Prop({ default: 'PENDING' }) status: string;
 
   @Prop() managerComment?: string;
 }

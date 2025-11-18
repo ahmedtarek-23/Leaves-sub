@@ -16,11 +16,11 @@ export class LeavePolicy extends Document {
 
   // Criteria based on tenure, grade, or contract type
   @Prop({ type: Object })
-  eligibilityRules: Record<string, any>; 
+  eligibilityRules: Record<string, any>;
 
   // Rate at which leave accumulates (e.g., 2.5 days per month)
   @Prop({ required: true })
-  accrualRate: number; 
+  accrualRate: number;
 
   // Maximum number of days that can be carried over (BR 55)
   @Prop({ required: true })
@@ -31,11 +31,11 @@ export class LeavePolicy extends Document {
 
   // True if supporting documents are mandatory (REQ-016)
   @Prop({ default: false })
-  requiresDocument: boolean; 
+  requiresDocument: boolean;
 
   // Pay code used for synchronization with the Payroll module (BR 6)
   @Prop()
-  payrollPayCode: string; 
+  payrollPayCode: string;
 }
 
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);

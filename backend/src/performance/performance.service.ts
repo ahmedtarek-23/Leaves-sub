@@ -4,13 +4,18 @@ import { Template, TemplateDocument } from './schema/template.schema';
 import { Dispute, DisputeDocument } from './schema/dispute.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { CreateTemplateDto, CreateEvaluationDto, SubmitDisputeDto } from './dto';
+import {
+  CreateTemplateDto,
+  CreateEvaluationDto,
+  SubmitDisputeDto,
+} from './dto';
 
 @Injectable()
 export class PerformanceService {
   constructor(
     @InjectModel(Template.name) private templateModel: Model<TemplateDocument>,
-    @InjectModel(Evaluation.name) private evaluationModel: Model<EvaluationDocument>,
+    @InjectModel(Evaluation.name)
+    private evaluationModel: Model<EvaluationDocument>,
     @InjectModel(Dispute.name) private disputeModel: Model<DisputeDocument>,
   ) {}
 

@@ -15,10 +15,12 @@ export class Template {
   @Prop({ required: true })
   appraisalType: string; // e.g., Annual, Probation
 
-  @Prop([{ 
-    criterion: { type: String, required: true }, 
-    maxScore: { type: Number, required: true } 
-  }])
+  @Prop([
+    {
+      criterion: { type: String, required: true },
+      maxScore: { type: Number, required: true },
+    },
+  ])
   criteria: { criterion: string; maxScore: number }[];
 }
 

@@ -5,7 +5,6 @@ export type PositionDocument = Position & Document;
 
 @Schema({ timestamps: true })
 export class Position {
-
   @Prop({ required: true })
   title: string;
 

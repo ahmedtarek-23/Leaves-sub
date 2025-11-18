@@ -18,6 +18,9 @@ export class ApproveLeaveDto {
   comment?: string;
 }
 
-function IsOptional(): (target: ApproveLeaveDto, propertyKey: "comment") => void {
+function IsOptional(): (
+  target: ApproveLeaveDto,
+  propertyKey: 'comment',
+) => void {
   throw new Error('Function not implemented.');
 }

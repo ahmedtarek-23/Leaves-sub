@@ -1,4 +1,11 @@
-import { IsMongoId, IsDateString, IsEnum, IsArray, IsOptional, IsString } from 'class-validator';
+import {
+  IsMongoId,
+  IsDateString,
+  IsEnum,
+  IsArray,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateInterviewDto {
   @IsMongoId()

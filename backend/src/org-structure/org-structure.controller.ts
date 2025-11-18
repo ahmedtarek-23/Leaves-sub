@@ -22,13 +22,9 @@ export class OrgStructureController {
   }
 
   @Patch('pos/:id/deactivate')
-deactivate(
-  @Param('id') id: string,
-  @Body() body: DeactivatePositionDto
-) {
-  return this.svc.deactivatePosition(id, body);
-}
-
+  deactivate(@Param('id') id: string, @Body() body: DeactivatePositionDto) {
+    return this.svc.deactivatePosition(id, body);
+  }
 
   @Patch('dept/:id')
   rename(@Param('id') id: string, @Body() body: any) {

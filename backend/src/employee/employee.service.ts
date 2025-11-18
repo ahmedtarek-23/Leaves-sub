@@ -30,9 +30,7 @@ export class EmployeeService {
   }
 
   update(id: string, dto: UpdateEmployeeDto) {
-    return this.employeeModel
-      .findByIdAndUpdate(id, dto, { new: true })
-      .exec();
+    return this.employeeModel.findByIdAndUpdate(id, dto, { new: true }).exec();
   }
 
   async findByEmail(email: string) {

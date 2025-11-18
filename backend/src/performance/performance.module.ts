@@ -6,7 +6,10 @@ import { PerformanceController } from './performance.controller';
 import { Template, TemplateSchema } from './schema/template.schema';
 import { Evaluation, EvaluationSchema } from './schema/evaluation.schema';
 import { Dispute, DisputeSchema } from './schema/dispute.schema';
-import { AppraisalCycle, AppraisalCycleSchema } from './schema/appraisalCycle.schema';
+import {
+  AppraisalCycle,
+  AppraisalCycleSchema,
+} from './schema/appraisalCycle.schema';
 import { EmployeeModule } from '../employee/employee.module';
 import { OrgStructureModule } from '../org-structure/org-structure.module';
 
@@ -18,7 +21,7 @@ import { OrgStructureModule } from '../org-structure/org-structure.module';
       { name: Dispute.name, schema: DisputeSchema },
       { name: AppraisalCycle.name, schema: AppraisalCycleSchema },
     ]),
-    
+
     EmployeeModule,
     OrgStructureModule,
   ],

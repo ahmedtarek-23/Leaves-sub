@@ -25,9 +25,7 @@ export class ShiftService {
   }
 
   async update(id: string, dto: UpdateShiftDto) {
-    return this.shiftModel
-      .findByIdAndUpdate(id, dto, { new: true })
-      .lean();
+    return this.shiftModel.findByIdAndUpdate(id, dto, { new: true }).lean();
   }
 
   async remove(id: string) {

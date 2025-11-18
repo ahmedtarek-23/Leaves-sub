@@ -12,8 +12,15 @@ export class Application {
   jobRequisitionId: Types.ObjectId;
 
   @Prop({
-    enum: ['SCREENING', 'SHORTLISTED', 'INTERVIEW', 'OFFER', 'HIRED', 'REJECTED'],
-    default: 'SCREENING'
+    enum: [
+      'SCREENING',
+      'SHORTLISTED',
+      'INTERVIEW',
+      'OFFER',
+      'HIRED',
+      'REJECTED',
+    ],
+    default: 'SCREENING',
   })
   stage: string;
 

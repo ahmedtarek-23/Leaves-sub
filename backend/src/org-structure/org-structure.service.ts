@@ -20,27 +20,27 @@ export class OrgStructureService {
   }
 
   updateReportingLine(id: string, dto: UpdateReportingLineDto) {
-    return { 
+    return {
       ok: true,
       msg: 'dummy reporting line updated',
-      input: dto
+      input: dto,
     };
   }
 
   deactivatePosition(id: string, dto: DeactivatePositionDto) {
-    return { 
-      ok: true, 
-      msg: 'dummy pos deactivated', 
-      input: dto 
+    return {
+      ok: true,
+      msg: 'dummy pos deactivated',
+      input: dto,
     };
   }
 
   renameDept(id: string, dto: RenameDepartmentDto) {
-    return { 
-      ok: true, 
-      msg: 'dummy dept renamed', 
+    return {
+      ok: true,
+      msg: 'dummy dept renamed',
       id,
-      input: dto
+      input: dto,
     };
   }
 }

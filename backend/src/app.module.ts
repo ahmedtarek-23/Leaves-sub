@@ -15,7 +15,7 @@ import { AssignmentModule } from './assignment/assignment.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { LeavesModule } from './leaves/leaves.module';
 import { RecruitmentModule } from './recruitment/recruitment.module';
-
+import { PayrollModule } from './payroll/payroll.module';
 
 @Module({
   imports: [
@@ -35,6 +35,7 @@ import { RecruitmentModule } from './recruitment/recruitment.module';
     AvailabilityModule,
     LeavesModule,
     RecruitmentModule,
+    PayrollModule,
   ],
   controllers: [AppController],
   providers: [AppService],

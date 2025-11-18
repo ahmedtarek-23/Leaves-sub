@@ -25,7 +25,7 @@ export class Candidate {
 
   @Prop({
     enum: ['INTERNAL', 'REFERRAL', 'EXTERNAL'],
-    default: 'EXTERNAL'
+    default: 'EXTERNAL',
   })
   referralSource: string;
 

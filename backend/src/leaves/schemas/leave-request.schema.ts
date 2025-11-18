@@ -4,7 +4,7 @@ import { Document, Types } from 'mongoose';
 // Defines the individual step in the multi-level workflow
 class ApprovalStep {
   @Prop({ type: Types.ObjectId }) // Refers to Manager/HR user ID
-  approverId: Types.ObjectId; 
+  approverId: Types.ObjectId;
 
   @Prop({ default: 'PENDING' })
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'ESCALATED';
@@ -18,7 +18,7 @@ class ApprovalStep {
 
 @Schema({ timestamps: true })
 export class LeaveRequest extends Document {
-  // Foreign key link to the Employee Profile module 
+  // Foreign key link to the Employee Profile module
   @Prop({ required: true, index: true, type: Types.ObjectId })
   employeeId: Types.ObjectId;
 
@@ -45,11 +45,11 @@ export class LeaveRequest extends Document {
 
   // Current overall status of the request (REQ-021/022)
   @Prop({ default: 'PENDING' })
-  status: string; 
+  status: string;
 
   // Tracks the multi-level approval chain (REQ-020, REQ-025)
   @Prop({ type: [ApprovalStep] })
-  approvalWorkflow: ApprovalStep[]; 
+  approvalWorkflow: ApprovalStep[];
 
   // True if submitted after the leave started (REQ-031)
   @Prop({ default: false })

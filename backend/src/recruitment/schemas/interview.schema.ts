@@ -13,7 +13,7 @@ export class Interview {
 
   @Prop({
     enum: ['IN_PERSON', 'VIDEO', 'PHONE'],
-    default: 'VIDEO'
+    default: 'VIDEO',
   })
   interviewType: string;
 
@@ -28,7 +28,7 @@ export class Interview {
 
   @Prop({
     enum: ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'],
-    default: 'SCHEDULED'
+    default: 'SCHEDULED',
   })
   status: string;
 

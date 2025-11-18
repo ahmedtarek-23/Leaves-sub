@@ -24,4 +24,5 @@ export class AppraisalCycle {
   isClosed: boolean;
 }
 
-export const AppraisalCycleSchema = SchemaFactory.createForClass(AppraisalCycle);
+export const AppraisalCycleSchema =
+  SchemaFactory.createForClass(AppraisalCycle);

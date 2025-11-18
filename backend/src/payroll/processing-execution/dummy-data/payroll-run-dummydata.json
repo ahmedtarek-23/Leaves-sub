@@ -1,0 +1,55 @@
+[
+  {
+    "_id": {
+      "$oid": "65554f67c13a48e7a07c3901"
+    },
+    "payrollPeriodId": "2025-10",
+    "periodName": "October 2025 Pay Cycle",
+    "startDate": {
+      "$date": "2025-10-01T00:00:00.000Z"
+    },
+    "endDate": {
+      "$date": "2025-10-31T23:59:59.999Z"
+    },
+    "status": "Approved",
+    "totalNetPay": 75000.00,
+    "totalGrossPay": 90000.00,
+    "initiatedByUserId": {
+      "$oid": "65554f67c13a48e7a07c3999"
+    },
+    "lockDate": {
+      "$date": "2025-11-05T12:00:00.000Z"
+    },
+    "createdAt": {
+      "$date": "2025-11-01T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2025-11-05T12:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "65554f67c13a48e7a07c3902"
+    },
+    "payrollPeriodId": "2025-11",
+    "periodName": "November 2025 Pay Cycle",
+    "startDate": {
+      "$date": "2025-11-01T00:00:00.000Z"
+    },
+    "endDate": {
+      "$date": "2025-11-30T23:59:59.999Z"
+    },
+    "status": "Draft",
+    "totalNetPay": 0.00,
+    "totalGrossPay": 0.00,
+    "initiatedByUserId": {
+      "$oid": "65554f67c13a48e7a07c3999"
+    },
+    "createdAt": {
+      "$date": "2025-12-01T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2025-12-01T08:00:00.000Z"
+    }
+  }
+]

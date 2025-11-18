@@ -15,8 +15,10 @@ export class LeavesService {
 
   constructor(
     @InjectModel(LeavePolicy.name) private leavePolicyModel: Model<LeavePolicy>,
-    @InjectModel(LeaveBalance.name) private leaveBalanceModel: Model<LeaveBalance>,
-    @InjectModel(LeaveRequest.name) private leaveRequestModel: Model<LeaveRequest>,
+    @InjectModel(LeaveBalance.name)
+    private leaveBalanceModel: Model<LeaveBalance>,
+    @InjectModel(LeaveRequest.name)
+    private leaveRequestModel: Model<LeaveRequest>,
     // Inject dependent services to fulfill integration foundation (M1)
     // private readonly timeManagementService: TimeManagementService,
     // private readonly payrollProcessingService: PayrollProcessingService,
@@ -28,13 +30,24 @@ export class LeavesService {
    * Mocks sending data to Time Management to block attendance records.
    * Fulfills part of the Integration Foundation (REQ-042).
    */
-  syncWithTimeManagement(employeeId: string, startDate: string, durationDays: number) {
-    const dummyData = { employeeId, startDate, durationDays, action: 'BLOCK_ATTENDANCE' };
-    
+  syncWithTimeManagement(
+    employeeId: string,
+    startDate: string,
+    durationDays: number,
+  ) {
+    const dummyData = {
+      employeeId,
+      startDate,
+      durationDays,
+      action: 'BLOCK_ATTENDANCE',
+    };
+
     // In M1, we only log the action to prove the architectural link is set up
-    this.logger.log(`[M1 INTEGRATION MOCK] Sent dummy data to Time Management: ${JSON.stringify(dummyData)}`);
+    this.logger.log(
+      `[M1 INTEGRATION MOCK] Sent dummy data to Time Management: ${JSON.stringify(dummyData)}`,
+    );
     // Example of an actual call in M2: this.timeManagementService.blockAttendance(dummyData);
-    
+
     return { success: true, message: 'Dummy sync complete' };
   }
 
@@ -42,11 +55,22 @@ export class LeavesService {
    * Mocks sending data to Payroll for adjustments (unpaid leave, encashment).
    * Fulfills part of the Integration Foundation (REQ-042, BR 52).
    */
-  syncWithPayroll(employeeId: string, payrollCode: string, adjustmentDays: number) {
-    const dummyData = { employeeId, payrollCode, adjustmentDays, action: 'APPLY_ADJUSTMENT' };
+  syncWithPayroll(
+    employeeId: string,
+    payrollCode: string,
+    adjustmentDays: number,
+  ) {
+    const dummyData = {
+      employeeId,
+      payrollCode,
+      adjustmentDays,
+      action: 'APPLY_ADJUSTMENT',
+    };
 
     // In M1, we only log the action to prove the architectural link is set up
-    this.logger.log(`[M1 INTEGRATION MOCK] Sent dummy data to Payroll Processing: ${JSON.stringify(dummyData)}`);
+    this.logger.log(
+      `[M1 INTEGRATION MOCK] Sent dummy data to Payroll Processing: ${JSON.stringify(dummyData)}`,
+    );
     // Example of an actual call in M2: this.payrollProcessingService.applyLeaveAdjustment(dummyData);
 
     return { success: true, message: 'Dummy sync complete' };
@@ -55,14 +79,18 @@ export class LeavesService {
   // --- PLACEHOLDER LOGIC (To be developed in M2) ---
 
   async submitRequest(requestData: any) {
-    this.logger.log(`Submitting request for employee: ${requestData.employeeId}. Logic to be implemented in M2.`);
+    this.logger.log(
+      `Submitting request for employee: ${requestData.employeeId}. Logic to be implemented in M2.`,
+    );
     // Example call to integration mock after simulated approval:
-    // this.syncWithTimeManagement('E001', '2025-12-01', 5); 
+    // this.syncWithTimeManagement('E001', '2025-12-01', 5);
     return { message: 'Request recorded (M1 placeholder).' };
   }
 
   async getEmployeeBalance(employeeId: string) {
-    this.logger.log(`Fetching balance for ${employeeId}. Logic to be implemented in M2.`);
+    this.logger.log(
+      `Fetching balance for ${employeeId}. Logic to be implemented in M2.`,
+    );
     return [];
   }
 }
