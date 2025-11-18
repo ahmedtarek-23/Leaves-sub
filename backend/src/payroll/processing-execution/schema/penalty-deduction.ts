@@ -6,28 +6,28 @@ import { Document, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class PenaltyDeduction extends Document {
   // Unique ID for the specific penalty source event
-  @Prop({ required: true, unique: true })
-  sourceTransactionId: string;
+  @Prop({ type: Types.ObjectId, required: true })
+  sourceTransactionId: Types.ObjectId;
 
   // Employee ID being penalized/deducted
-  @Prop({
-    type: Types.ObjectId,
-    ref: 'EmployeeProfile',
-    required: true,
-    index: true,
-  })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true, index: true })
   employeeId: Types.ObjectId;
 
   // The subsystem that generated the penalty/deduction
-  @Prop({
-    required: true,
-    enum: ['TimeManagement', 'Leaves', 'Performance', 'Other'],
-  })
+  @Prop({ required: true, enum: ['TimeManagement', 'Leaves', 'Performance', 'Other'] })
   sourceModule: string;
 
   // Type of penalty/deduction (e.g., 'Missing Hours', 'Unpaid Leave Day', 'Misconduct Fine')
   @Prop({ required: true })
   type: string;
+
+  // Human-readable description for transparency
+  @Prop({ type: String, required: false })
+  description?: string;
+
+  // Link to policy rule from Config module
+  @Prop({ type: String, required: false })
+  penaltyRuleCode?: string;
 
   // Amount deducted in local currency
   @Prop({ required: true })
@@ -42,13 +42,11 @@ export class PenaltyDeduction extends Document {
   payrollRunId: Types.ObjectId;
 
   // Status to ensure it is only processed once
-  @Prop({
-    required: true,
-    enum: ['Pending', 'Processed', 'Cancelled'],
-    default: 'Pending',
-  })
+  @Prop({ required: true, enum: ['Pending', 'Processed', 'Cancelled'], default: 'Pending' })
   status: string;
 }
 
-export const PenaltyDeductionSchema =
-  SchemaFactory.createForClass(PenaltyDeduction);
+export const PenaltyDeductionSchema = SchemaFactory.createForClass(PenaltyDeduction);
+
+// Index for fetching pending penalties by date
+PenaltyDeductionSchema.index({ status: 1, effectiveDate: 1 });
