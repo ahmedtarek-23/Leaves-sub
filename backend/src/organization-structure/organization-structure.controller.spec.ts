@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { OrganizationStructureService } from './organization-structure.service';
 import { CreateDepartmentDto } from './DTOs/create-department.dto';
 import { UpdateDepartmentDto } from './DTOs/update-department.dto';
@@ -31,10 +24,7 @@ export class OrganizationStructureController {
   }
 
   @Patch('departments/:id')
-  updateDepartment(
-    @Param('id') id: string,
-    @Body() dto: UpdateDepartmentDto,
-  ) {
+  updateDepartment(@Param('id') id: string, @Body() dto: UpdateDepartmentDto) {
     return this.organizationStructureService?.updateDepartment(id, dto);
   }
 
@@ -45,10 +35,7 @@ export class OrganizationStructureController {
   }
 
   @Patch('positions/:id')
-  updatePosition(
-    @Param('id') id: string,
-    @Body() dto: UpdatePositionDto,
-  ) {
+  updatePosition(@Param('id') id: string, @Body() dto: UpdatePositionDto) {
     return this.organizationStructureService?.updatePosition(id, dto);
   }
 

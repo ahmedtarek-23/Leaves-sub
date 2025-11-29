@@ -54,7 +54,10 @@ export class PerformanceController {
 
   @Patch('templates/:id')
   @Permissions(Permission.MANAGE_APPRAISALS)
-  updateTemplate(@Param('id') id: string, @Body() dto: Partial<CreateTemplateDto>) {
+  updateTemplate(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateTemplateDto>,
+  ) {
     return this.service.updateTemplate(id, dto);
   }
 
@@ -109,7 +112,10 @@ export class PerformanceController {
     @Param('managerId') managerId: string,
     @Req() req: Request & { user: AuthUser },
   ) {
-    return this.service.getAssignmentsForManager(managerId.toString(), req.user);
+    return this.service.getAssignmentsForManager(
+      managerId.toString(),
+      req.user,
+    );
   }
 
   /**  USER-SCOPED  */
@@ -119,7 +125,10 @@ export class PerformanceController {
     @Param('employeeId') employeeId: string,
     @Req() req: Request & { user: AuthUser },
   ) {
-    return this.service.getAssignmentsForEmployee(employeeId.toString(), req.user);
+    return this.service.getAssignmentsForEmployee(
+      employeeId.toString(),
+      req.user,
+    );
   }
 
   @Get('assignments/:id')
@@ -132,7 +141,10 @@ export class PerformanceController {
   /**  USER-SCOPED  */
   @Post('records')
   @Permissions(Permission.CONDUCT_APPRAISALS)
-  submitRecord(@Body() dto: SubmitRecordDto, @Req() req: Request & { user: AuthUser }) {
+  submitRecord(
+    @Body() dto: SubmitRecordDto,
+    @Req() req: Request & { user: AuthUser },
+  ) {
     return this.service.submitRecord(dto, req.user);
   }
 
@@ -149,20 +161,28 @@ export class PerformanceController {
   }
 
   /**  USER-SCOPED  */
-@Patch('records/:id/acknowledge')
-@Permissions(Permission.VIEW_OWN_APPRAISAL)
-acknowledge(
-  @Param('id') id: string,
-  @Req() req: Request & { user: AuthUser },
-  @Body() body: AcknowledgeRecordDto,
-) {
-  return this.service.acknowledgeRecord(id, body.employeeId.toString(), body.comment, req.user);
-}
+  @Patch('records/:id/acknowledge')
+  @Permissions(Permission.VIEW_OWN_APPRAISAL)
+  acknowledge(
+    @Param('id') id: string,
+    @Req() req: Request & { user: AuthUser },
+    @Body() body: AcknowledgeRecordDto,
+  ) {
+    return this.service.acknowledgeRecord(
+      id,
+      body.employeeId.toString(),
+      body.comment,
+      req.user,
+    );
+  }
   /* ----------  Disputes (REQ-AE-07, REQ-OD-07)  ---------- */
   /**  USER-SCOPED  */
   @Post('disputes')
   @Permissions(Permission.VIEW_OWN_APPRAISAL)
-  raiseDispute(@Body() dto: RaiseDisputeDto, @Req() req: Request & { user: AuthUser }) {
+  raiseDispute(
+    @Body() dto: RaiseDisputeDto,
+    @Req() req: Request & { user: AuthUser },
+  ) {
     return this.service.raiseDispute(dto, req.user);
   }
 
@@ -199,13 +219,20 @@ acknowledge(
     @Req() req: Request & { user: AuthUser },
     @Query('limit') limit?: number,
   ) {
-    return this.service.getEmployeeAppraisalHistory(employeeId, limit, req.user);
+    return this.service.getEmployeeAppraisalHistory(
+      employeeId,
+      limit,
+      req.user,
+    );
   }
 
   /**  USER-SCOPED  */
   @Get('employees/:employeeId/trends')
   @Permissions(Permission.VIEW_OWN_APPRAISAL, Permission.MANAGE_APPRAISALS)
-  getEmployeeTrends(@Param('employeeId') employeeId: string, @Req() req: Request & { user: AuthUser }) {
+  getEmployeeTrends(
+    @Param('employeeId') employeeId: string,
+    @Req() req: Request & { user: AuthUser },
+  ) {
     return this.service.getEmployeeAppraisalTrends(employeeId, req.user);
   }
 

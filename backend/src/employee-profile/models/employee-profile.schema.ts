@@ -37,7 +37,6 @@ export class EmployeeProfile extends UserProfileBase {
   @Prop({ type: Date })
   contractEndDate?: Date;
 
-  
   @Prop({
     type: String,
     enum: Object.values(ContractType),

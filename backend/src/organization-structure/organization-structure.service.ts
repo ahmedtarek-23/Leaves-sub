@@ -8,14 +8,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
-import {
-  Department,
-  DepartmentDocument,
-} from './models/department.schema';
-import {
-  Position,
-  PositionDocument,
-} from './models/position.schema';
+import { Department, DepartmentDocument } from './models/department.schema';
+import { Position, PositionDocument } from './models/position.schema';
 import {
   PositionAssignment,
   PositionAssignmentDocument,
@@ -302,9 +296,7 @@ export class OrganizationStructureService {
         throw new BadRequestException('Position cannot report to itself.');
       }
 
-      if (
-        await this.createsCircularReporting(id, dto.reportsToPositionId)
-      ) {
+      if (await this.createsCircularReporting(id, dto.reportsToPositionId)) {
         throw new BadRequestException(
           'Circular reporting line detected (REQ-OSM-09).',
         );
@@ -424,9 +416,8 @@ export class OrganizationStructureService {
       employeeId,
       endDate: { $exists: false },
     });
-    if (!assignment) throw new NotFoundException(
-      'Employee has no active position.',
-    );
+    if (!assignment)
+      throw new NotFoundException('Employee has no active position.');
 
     const pos = await this.posModel.findById(assignment.positionId);
     if (!pos) throw new NotFoundException('Position not found.');
@@ -451,9 +442,8 @@ export class OrganizationStructureService {
       employeeId: managerEmployeeId,
       endDate: { $exists: false },
     });
-    if (!assignment) throw new NotFoundException(
-      'Manager has no active position.',
-    );
+    if (!assignment)
+      throw new NotFoundException('Manager has no active position.');
 
     const managerPos = await this.posModel.findById(assignment.positionId);
     if (!managerPos) throw new NotFoundException('Position not found.');
@@ -518,9 +508,8 @@ export class OrganizationStructureService {
 
   async createChangeRequest(dto: CreateStructureChangeRequestDto) {
     const emp = await this.employeeModel.findById(dto.requestedByEmployeeId);
-    if (!emp) throw new NotFoundException(
-      'requestedByEmployeeId does not exist.',
-    );
+    if (!emp)
+      throw new NotFoundException('requestedByEmployeeId does not exist.');
 
     const requestNumber = dto.requestNumber ?? this.generateReqNumber();
 

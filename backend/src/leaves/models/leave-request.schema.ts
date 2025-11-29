@@ -47,14 +47,29 @@ export class LeaveRequest {
   }[];
 
   @Prop({
-    enum: LeaveStatus,
+    type: String,
+    enum: Object.values(LeaveStatus),
     default: LeaveStatus.PENDING,
   })
   status: LeaveStatus;
 
   @Prop({ default: false })
   irregularPatternFlag: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  createdBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  updatedBy?: Types.ObjectId;
+
+  @Prop()
+  escalateAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  escalatedTo?: Types.ObjectId;
+
+  @Prop({ default: 0 })
+  unpaidDays?: number;
 }
 
-export const LeaveRequestSchema =
-  SchemaFactory.createForClass(LeaveRequest);
+export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);

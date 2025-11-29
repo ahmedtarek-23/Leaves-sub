@@ -50,7 +50,7 @@ import { RolesGuard } from './auth/authorization/guards/roles.guard';
   providers: [
     AppService,
     {
-      provide:  APP_GUARD,
+      provide: APP_GUARD,
       useClass: RolesGuard,
     },
   ],

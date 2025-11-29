@@ -11,9 +11,7 @@ import {
   EmployeeProfile,
   EmployeeProfileDocument,
 } from './models/employee-profile.schema';
-import {
-  EmployeeProfileChangeRequest,
-} from './models/ep-change-request.schema';
+import { EmployeeProfileChangeRequest } from './models/ep-change-request.schema';
 import {
   EmployeeSystemRole,
   EmployeeSystemRoleDocument,
@@ -265,13 +263,8 @@ export class EmployeeProfileService {
       .exec();
   }
 
-  async reviewChangeRequest(
-    requestId: string,
-    dto: ReviewChangeRequestDto,
-  ) {
-    const request = await this.changeRequestModel
-      .findOne({ requestId })
-      .exec();
+  async reviewChangeRequest(requestId: string, dto: ReviewChangeRequestDto) {
+    const request = await this.changeRequestModel.findOne({ requestId }).exec();
 
     if (!request) {
       throw new NotFoundException('Change request not found');
@@ -285,9 +278,7 @@ export class EmployeeProfileService {
       dto.decision !== ProfileChangeStatus.APPROVED &&
       dto.decision !== ProfileChangeStatus.REJECTED
     ) {
-      throw new BadRequestException(
-        'Decision must be APPROVED or REJECTED',
-      );
+      throw new BadRequestException('Decision must be APPROVED or REJECTED');
     }
 
     request.status = dto.decision;
@@ -351,8 +342,7 @@ export class EmployeeProfileService {
       profile.contractStartDate = new Date(dto.contractStartDate);
     if (dto.contractEndDate !== undefined)
       profile.contractEndDate = new Date(dto.contractEndDate);
-    if (dto.contractType !== undefined)
-      profile.contractType = dto.contractType;
+    if (dto.contractType !== undefined) profile.contractType = dto.contractType;
     if (dto.workType !== undefined) profile.workType = dto.workType;
 
     if (dto.status !== undefined) {
@@ -367,9 +357,7 @@ export class EmployeeProfileService {
     if (dto.primaryPositionId !== undefined)
       profile.primaryPositionId = new Types.ObjectId(dto.primaryPositionId);
     if (dto.primaryDepartmentId !== undefined)
-      profile.primaryDepartmentId = new Types.ObjectId(
-        dto.primaryDepartmentId,
-      );
+      profile.primaryDepartmentId = new Types.ObjectId(dto.primaryDepartmentId);
     if (dto.supervisorPositionId !== undefined)
       profile.supervisorPositionId = new Types.ObjectId(
         dto.supervisorPositionId,
@@ -383,17 +371,11 @@ export class EmployeeProfileService {
     return updated;
   }
 
-  async deactivateEmployeeProfile(
-    employeeProfileId: string,
-    reason?: string,
-  ) {
-    const updated = await this.updateEmployeeProfileAsAdmin(
-      employeeProfileId,
-      {
-        status: EmployeeStatus.TERMINATED,
-        statusEffectiveFrom: new Date().toISOString(),
-      },
-    );
+  async deactivateEmployeeProfile(employeeProfileId: string, reason?: string) {
+    const updated = await this.updateEmployeeProfileAsAdmin(employeeProfileId, {
+      status: EmployeeStatus.TERMINATED,
+      statusEffectiveFrom: new Date().toISOString(),
+    });
 
     if (reason) {
       await this.changeRequestModel.create({

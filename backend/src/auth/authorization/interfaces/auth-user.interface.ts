@@ -6,7 +6,6 @@ export interface AuthUser {
   employeeId?: string;
   departmentId?: string;
   positionId?: string; // ← add this
-
 }
 
 export interface JwtPayload {

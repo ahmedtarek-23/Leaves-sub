@@ -31,7 +31,9 @@ import { UserRole } from '../auth/authorization/constants/roles.constant';
 @Controller('employee-profile')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeeProfileController {
-  constructor(private readonly employeeProfileService: EmployeeProfileService) {}
+  constructor(
+    private readonly employeeProfileService: EmployeeProfileService,
+  ) {}
 
   /* ---------- Admin: Create Employee ---------- */
   @Post('admin')
@@ -163,6 +165,6 @@ export class EmployeeProfileController {
       UserRole.HR_MANAGER,
       UserRole.HR_ADMIN,
       UserRole.SYSTEM_ADMIN,
-    ].includes(user.role as UserRole);
+    ].includes(user.role);
   }
 }

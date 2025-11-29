@@ -1,5 +1,16 @@
 // src/performance/dto/performance.dto.ts
-import { IsString, IsNotEmpty,ArrayNotEmpty, IsOptional, IsArray, IsEnum, IsMongoId, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  ArrayNotEmpty,
+  IsOptional,
+  IsArray,
+  IsEnum,
+  IsMongoId,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { Types } from 'mongoose';
 import {
   AppraisalTemplateType,
@@ -212,7 +223,7 @@ export class SubmitRecordDto {
 
 export class PublishRecordDto {
   @IsOptional()
-  @IsString()          // ← accept string from client
+  @IsString() // ← accept string from client
   @IsMongoId()
   hrPublishedById?: Types.ObjectId;
 }

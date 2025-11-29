@@ -38,6 +38,12 @@ export class LeaveEntitlement {
 
   @Prop()
   nextResetDate?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  createdBy?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  updatedBy?: Types.ObjectId;
 }
 
 export const LeaveEntitlementSchema =

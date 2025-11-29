@@ -1,1 +1,1 @@
-export * from './performance.dto'
+export * from './performance.dto';

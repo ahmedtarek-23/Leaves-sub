@@ -65,15 +65,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.VIEW_TEAM_ATTENDANCE,
   ],
   [UserRole.PAYROLL_MANAGER]: [
-  Permission.MANAGE_PAYROLL,
-  Permission.APPROVE_PAYROLL,
-  Permission.VIEW_TEAM_ATTENDANCE,
-  Permission.VIEW_ORG_STRUCTURE,
-],
-
-  [UserRole.FINANCE_STAFF]: [
+    Permission.MANAGE_PAYROLL,
     Permission.APPROVE_PAYROLL,
+    Permission.VIEW_TEAM_ATTENDANCE,
+    Permission.VIEW_ORG_STRUCTURE,
   ],
+
+  [UserRole.FINANCE_STAFF]: [Permission.APPROVE_PAYROLL],
 
   [UserRole.LEGAL_POLICY_ADMIN]: [
     Permission.MANAGE_PAYROLL, // For tax/legal config

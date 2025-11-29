@@ -4,7 +4,7 @@ export enum UserRole {
   HR_ADMIN = 'HR Admin',
   HR_EMPLOYEE = 'HR Employee',
   PAYROLL_SPECIALIST = 'Payroll Specialist',
-  PAYROLL_MANAGER='Payroll Manager',
+  PAYROLL_MANAGER = 'Payroll Manager',
   FINANCE_STAFF = 'Finance Staff',
   LEGAL_POLICY_ADMIN = 'Legal & Policy Admin',
   RECRUITER = 'Recruiter',

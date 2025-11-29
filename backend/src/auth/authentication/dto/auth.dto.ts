@@ -1,18 +1,25 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsEnum,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { UserRole } from '../../authorization/constants/roles.constant';
 
 export class RegisterDto {
-  @IsEmail() 
+  @IsEmail()
   email!: string;
 
-  @IsString() 
-  @MinLength(6) 
+  @IsString()
+  @MinLength(6)
   password!: string;
 
-  @IsString() 
+  @IsString()
   firstName!: string;
 
-  @IsString() 
+  @IsString()
   lastName!: string;
 
   @IsString()
@@ -24,15 +31,15 @@ export class RegisterDto {
   @IsDateString()
   dateOfHire!: string; // Format: YYYY-MM-DD
 
-  @IsEnum(UserRole) 
+  @IsEnum(UserRole)
   role!: UserRole;
 
-  @IsOptional() 
-  @IsString() 
+  @IsOptional()
+  @IsString()
   employeeId?: string;
 
-  @IsOptional() 
-  @IsString() 
+  @IsOptional()
+  @IsString()
   departmentId?: string;
 }
 
@@ -40,6 +47,6 @@ export class LoginDto {
   @IsEmail(undefined, { message: 'Please provide a valid email' })
   email!: string;
 
-  @IsString() 
+  @IsString()
   password!: string;
 }

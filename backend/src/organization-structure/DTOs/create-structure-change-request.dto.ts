@@ -1,9 +1,4 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsEnum,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
 import { StructureRequestType } from '../enums/organization-structure.enums';
 
 export class CreateStructureChangeRequestDto {

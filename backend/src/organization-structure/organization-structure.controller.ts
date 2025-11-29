@@ -146,8 +146,7 @@ export class OrganizationStructureController {
     @Query('managerEmployeeId') managerId: string,
     @Req() req: Request & { user: AuthUser },
   ) {
-    if (!managerId)
-      throw new BadRequestException('managerEmployeeId required');
+    if (!managerId) throw new BadRequestException('managerEmployeeId required');
     return this.service.getManagerTree(managerId, req.user);
   }
 
