@@ -21,6 +21,12 @@ import {
   StructureChangeRequestSchema,
 } from './models/structure-change-request.schema';
 
+// ⭐ ADD THESE IMPORTS
+import {
+  EmployeeProfile,
+  EmployeeProfileSchema,
+} from '../employee-profile/models/employee-profile.schema';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -29,10 +35,10 @@ import {
       { name: PositionAssignment.name, schema: PositionAssignmentSchema },
       { name: StructureApproval.name, schema: StructureApprovalSchema },
       { name: StructureChangeLog.name, schema: StructureChangeLogSchema },
-      {
-        name: StructureChangeRequest.name,
-        schema: StructureChangeRequestSchema,
-      },
+      { name: StructureChangeRequest.name, schema: StructureChangeRequestSchema },
+
+      // ⭐ REGISTER EMPLOYEE PROFILE MODEL HERE
+      { name: EmployeeProfile.name, schema: EmployeeProfileSchema },
     ]),
   ],
   controllers: [OrganizationStructureController],
