@@ -6,20 +6,20 @@ import { TimeExceptionType, TimeExceptionStatus } from "./enums/index";
 export type TimeExceptionDocument = HydratedDocument<TimeException>;
 
 @Schema()
-export class TimeException {
-    @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
+export class TimeException{
+    @Prop({type: Types.ObjectId, ref: 'EmployeeProfile', required: true})
     employeeId: Types.ObjectId;
 
-    @Prop({ type: String, enum: TimeExceptionType, required: true })
+    @Prop({enum: TimeExceptionType, required: true})
     type: TimeExceptionType;
 
-    @Prop({ type: Types.ObjectId, ref: 'AttendanceRecord', required: true })
+    @Prop({type: Types.ObjectId, ref: 'AttendanceRecord', required: true})
     attendanceRecordId: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
+    @Prop({type: Types.ObjectId, ref: 'EmployeeProfile', required: true})
     assignedTo: Types.ObjectId; // person responsible for handling the exception
 
-    @Prop({ type: String, enum: TimeExceptionStatus, default: TimeExceptionStatus.OPEN })
+    @Prop({ enum: TimeExceptionStatus, default: TimeExceptionStatus.OPEN })
     status: TimeExceptionStatus;
 
     @Prop()

@@ -1,6 +1,4 @@
-import { Controller, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth';
+import { Controller } from '@nestjs/common';
 
 @Controller('time-management')
-@UseGuards(JwtAuthGuard)
 export class TimeManagementController {}

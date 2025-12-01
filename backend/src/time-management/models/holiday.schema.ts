@@ -6,7 +6,7 @@ export type HolidayDocument = HydratedDocument<Holiday>;
 
 @Schema({ timestamps: true })
 export class Holiday {
-  @Prop({ type: String, enum: HolidayType, required: true })
+  @Prop({ enum: HolidayType, required: true })
   type: HolidayType;
 
   @Prop({ required: true })

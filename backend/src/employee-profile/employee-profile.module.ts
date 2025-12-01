@@ -19,11 +19,9 @@ import {
   EmployeeQualification,
   EmployeeQualificationSchema,
 } from './models/qualification.schema';
-import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
-    AuthModule,
     MongooseModule.forFeature([
       { name: Candidate.name, schema: CandidateSchema },
       { name: EmployeeProfile.name, schema: EmployeeProfileSchema },
