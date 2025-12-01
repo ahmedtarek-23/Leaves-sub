@@ -39,7 +39,7 @@ export class LeaveEntitlement {
   @Prop()
   nextResetDate?: Date;
 
-    @Prop({ default: 0 })
+  @Prop({ default: 0 })
   accrued: number;
 
   @Prop({ default: 0 })

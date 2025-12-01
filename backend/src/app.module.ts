@@ -13,7 +13,17 @@ import { PayrollConfigurationModule } from './payroll-configuration/payroll-conf
 import { PayrollExecutionModule } from './payroll-execution/payroll-execution.module';
 
 @Module({
-  imports: [TimeManagementModule, RecruitmentModule, LeavesModule, PayrollExecutionModule, PayrollConfigurationModule, PayrollTrackingModule, EmployeeProfileModule, OrganizationStructureModule, PerformanceModule],
+  imports: [
+    TimeManagementModule,
+    RecruitmentModule,
+    LeavesModule,
+    PayrollExecutionModule,
+    PayrollConfigurationModule,
+    PayrollTrackingModule,
+    EmployeeProfileModule,
+    OrganizationStructureModule,
+    PerformanceModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

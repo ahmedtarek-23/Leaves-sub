@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { LeaveRequest } from './models/leave-request.schema';
@@ -10,7 +15,7 @@ import { LeaveEntitlement } from './models/leave-entitlement.schema';
 
 // Import dependent services
 import { TimeManagementService } from '../time-management/time-management.service';
-import { EmployeeProfileService } from '../employee-profile/employee-profile.service'; 
+import { EmployeeProfileService } from '../employee-profile/employee-profile.service';
 import { NotificationService } from './notifications/notification.service';
 
 // Note: Payroll dependency is likely needed, but we'll use the service injection you defined.
@@ -21,16 +26,18 @@ export class LeavesService {
 
   constructor(
     // 1. Inject all Mongoose Models using @InjectModel()
-    @InjectModel(LeaveRequest.name) private leaveRequestModel: Model<LeaveRequest>,
+    @InjectModel(LeaveRequest.name)
+    private leaveRequestModel: Model<LeaveRequest>,
     @InjectModel(LeaveType.name) private leaveTypeModel: Model<LeaveType>,
     @InjectModel(LeavePolicy.name) private leavePolicyModel: Model<LeavePolicy>,
-    @InjectModel(LeaveEntitlement.name) private leaveEntitlementModel: Model<LeaveEntitlement>,
+    @InjectModel(LeaveEntitlement.name)
+    private leaveEntitlementModel: Model<LeaveEntitlement>,
     // Inject the remaining 4 models here...
-    
+
     // 2. Inject dependent services (for M2 integration calls)
     private readonly timeManagementService: TimeManagementService,
     private readonly employeeProfileService: EmployeeProfileService,
-    private readonly notificationService: NotificationService, 
+    private readonly notificationService: NotificationService,
     // Add Payroll Service injection here if you haven't yet
     // private readonly payrollProcessingService: PayrollProcessingService,
   ) {}

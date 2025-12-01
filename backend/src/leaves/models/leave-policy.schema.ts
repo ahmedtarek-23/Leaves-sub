@@ -10,7 +10,7 @@ export class LeavePolicy {
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({ enum: AccrualMethod, default: AccrualMethod.MONTHLY })
+  @Prop({ type: String, enum: AccrualMethod, default: AccrualMethod.MONTHLY })
   accrualMethod: AccrualMethod;
 
   @Prop({ default: 0 })
@@ -28,7 +28,7 @@ export class LeavePolicy {
   @Prop()
   expiryAfterMonths?: number;
 
-  @Prop({ enum: RoundingRule, default: RoundingRule.NONE })
+  @Prop({ type: String, enum: RoundingRule, default: RoundingRule.NONE })
   roundingRule: RoundingRule;
 
   @Prop({ default: 0 })
@@ -54,7 +54,6 @@ export class LeavePolicy {
 
   @Prop({ default: true })
   isActive: boolean;
-
 }
 
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);

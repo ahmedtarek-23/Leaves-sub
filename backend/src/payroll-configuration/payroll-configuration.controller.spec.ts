@@ -9,7 +9,9 @@ describe('PayrollConfigurationController', () => {
       controllers: [PayrollConfigurationController],
     }).compile();
 
-    controller = module.get<PayrollConfigurationController>(PayrollConfigurationController);
+    controller = module.get<PayrollConfigurationController>(
+      PayrollConfigurationController,
+    );
   });
 
   it('should be defined', () => {

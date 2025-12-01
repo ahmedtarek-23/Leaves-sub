@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { AttachmentType } from '../enums/attachment-type.enum';
@@ -28,7 +27,7 @@ export class LeaveType {
   @Prop({ default: false })
   requiresAttachment: boolean;
 
-  @Prop({ enum: AttachmentType })
+  @Prop({ type: String, enum: AttachmentType })
   attachmentType?: AttachmentType;
 
   @Prop({ default: null })

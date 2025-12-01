@@ -12,14 +12,16 @@ const mockLeaveRequestModel = {
   findOne: jest.fn(),
   findByIdAndUpdate: jest.fn(),
   create: jest.fn(),
-  save: jest.fn().mockResolvedValue({ id: 'newId', status: LeaveStatus.PENDING }),
+  save: jest
+    .fn()
+    .mockResolvedValue({ id: 'newId', status: LeaveStatus.PENDING }),
 };
 const mockLeaveEntitlementModel = {
   findOne: jest.fn(),
   findByIdAndUpdate: jest.fn(),
 };
-const mockOtherModels = { 
-  // Add mock definitions for your other 6 models (LeavePolicy, LeaveAdjustment, etc.) 
+const mockOtherModels = {
+  // Add mock definitions for your other 6 models (LeavePolicy, LeaveAdjustment, etc.)
   // You can set them to simple empty objects if they aren't used in the tested methods
 };
 
@@ -43,16 +45,35 @@ describe('LeavesService', () => {
       providers: [
         LeavesService,
         // Provide Mongoose Mocks using their Model Tokens
-        { provide: getModelToken('LeaveRequest'), useValue: mockLeaveRequestModel },
-        { provide: getModelToken('LeaveEntitlement'), useValue: mockLeaveEntitlementModel },
-        // Add all other 6 model tokens here (LeavePolicy, LeaveAdjustment, etc.)
+        {
+          provide: getModelToken('LeaveRequest'),
+          useValue: mockLeaveRequestModel,
+        },
+        {
+          provide: getModelToken('LeaveEntitlement'),
+          useValue: mockLeaveEntitlementModel,
+        },
+        // Add all other model tokens here to satisfy DI
+        { provide: getModelToken('LeaveType'), useValue: mockOtherModels },
         { provide: getModelToken('LeavePolicy'), useValue: mockOtherModels },
-        // ... (remaining 5 models)
-        
+        { provide: getModelToken('LeaveCategory'), useValue: mockOtherModels },
+        { provide: getModelToken('LeaveAdjustment'), useValue: mockOtherModels },
+        { provide: getModelToken('Calendar'), useValue: mockOtherModels },
+        { provide: getModelToken('Attachment'), useValue: mockOtherModels },
+
         // Provide External Service Mocks
-        { provide: 'TimeManagementService', useValue: mockTimeManagementService },
-        { provide: 'PayrollExecutionService', useValue: mockPayrollExecutionService },
-        { provide: 'EmployeeProfileService', useValue: mockEmployeeProfileService },
+        {
+          provide: 'TimeManagementService',
+          useValue: mockTimeManagementService,
+        },
+        {
+          provide: 'PayrollExecutionService',
+          useValue: mockPayrollExecutionService,
+        },
+        {
+          provide: 'EmployeeProfileService',
+          useValue: mockEmployeeProfileService,
+        },
       ],
     }).compile();
 
@@ -68,12 +89,18 @@ describe('LeavesService', () => {
   // =======================================================================
 
   describe('submitRequest', () => {
-    const baseRequest = { employeeId: 'E001', leaveTypeId: 'T001', durationDays: 5 };
+    const baseRequest = {
+      employeeId: 'E001',
+      leaveTypeId: 'T001',
+      durationDays: 5,
+    };
     const mockEntitlement = { remaining: 10, save: jest.fn() };
 
     it('should set status to PENDING if balance is sufficient (BR 31 met)', async () => {
       mockLeaveEntitlementModel.findOne.mockResolvedValue(mockEntitlement);
-      mockLeaveRequestModel.save.mockResolvedValue({ status: LeaveStatus.PENDING });
+      mockLeaveRequestModel.save.mockResolvedValue({
+        status: LeaveStatus.PENDING,
+      });
 
       const result = await service.submitRequest(baseRequest);
       expect(result.status).toBe(LeaveStatus.PENDING);
@@ -83,7 +110,7 @@ describe('LeavesService', () => {
       // 10 days requested, 5 remaining
       const overRequest = { ...baseRequest, durationDays: 10 };
       mockLeaveEntitlementModel.findOne.mockResolvedValue({ remaining: 5 });
-      
+
       const result = await service.submitRequest(overRequest);
       expect(result.status).toBe(LeaveStatus.PENDING); // Status set to PENDING for internal routing
       expect(result.status).not.toBe(LeaveStatus.APPROVED);
@@ -93,7 +120,9 @@ describe('LeavesService', () => {
       const zeroEntitlement = { remaining: 0 };
       mockLeaveEntitlementModel.findOne.mockResolvedValue(zeroEntitlement);
 
-      await expect(service.submitRequest(baseRequest)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.submitRequest(baseRequest)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
     });
   });
 
@@ -102,16 +131,26 @@ describe('LeavesService', () => {
   // =======================================================================
 
   describe('processReview', () => {
-    const mockApprovedRequest = { id: 'R001', status: LeaveStatus.PENDING, durationDays: 5, employeeId: 'E001' };
+    const mockApprovedRequest = {
+      id: 'R001',
+      status: LeaveStatus.PENDING,
+      durationDays: 5,
+      employeeId: 'E001',
+    };
 
     it('should set status to APPROVED and trigger integration if HR approves', async () => {
       mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
-      mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({ status: LeaveStatus.APPROVED });
-      
+      mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({
+        status: LeaveStatus.APPROVED,
+      });
+
       const reviewData = { action: 'APPROVE', isHR: true, decidedBy: 'HR001' };
 
-      const result = await service.processReview(mockApprovedRequest.id, reviewData);
-      
+      const result = await service.processReview(
+        mockApprovedRequest.id,
+        reviewData,
+      );
+
       // Check status and integration calls
       expect(result.status).toBe(LeaveStatus.APPROVED);
       expect(mockTimeManagementService.blockAttendance).toHaveBeenCalled();
@@ -120,18 +159,23 @@ describe('LeavesService', () => {
 
     it('should set status to REJECTED if manager rejects', async () => {
       mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
-      mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({ status: LeaveStatus.REJECTED });
-      
+      mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({
+        status: LeaveStatus.REJECTED,
+      });
+
       const reviewData = { action: 'REJECT', isHR: false, decidedBy: 'MGR001' };
 
-      const result = await service.processReview(mockApprovedRequest.id, reviewData);
-      
+      const result = await service.processReview(
+        mockApprovedRequest.id,
+        reviewData,
+      );
+
       // Check status and integration calls
       expect(result.status).toBe(LeaveStatus.REJECTED);
       expect(mockTimeManagementService.blockAttendance).not.toHaveBeenCalled();
     });
   });
-  
+
   // =======================================================================
   // TEST SUITE 3: OFFBOARDING LOGIC (BR 53)
   // =======================================================================
@@ -140,33 +184,47 @@ describe('LeavesService', () => {
     const employeeId = 'E001';
     const dailyRate = 100;
     const mockLeaveTypeId = new Types.ObjectId();
-    
+
     // Set up model to resolve the necessary entitlement document
     beforeEach(() => {
-        mockLeaveEntitlementModel.findOne.mockResolvedValue({ remaining: 40, leaveTypeId: mockLeaveTypeId });
+      mockLeaveEntitlementModel.findOne.mockResolvedValue({
+        remaining: 40,
+        leaveTypeId: mockLeaveTypeId,
+      });
     });
 
     it('should enforce the 30-day cap on unused leave (BR 53)', async () => {
-        // Remaining days is 40 (over cap)
-        const result = await service.processFinalSettlement(employeeId, dailyRate);
+      // Remaining days is 40 (over cap)
+      const result = await service.processFinalSettlement(
+        employeeId,
+        dailyRate,
+      );
 
-        // Expect calculation based on 30 days (max cap)
-        expect(result.unusedDays).toBe(30);
-        expect(result.encashmentAmount).toBe(30 * dailyRate);
+      // Expect calculation based on 30 days (max cap)
+      expect(result.unusedDays).toBe(30);
+      expect(result.encashmentAmount).toBe(30 * dailyRate);
     });
 
     it('should calculate encashment correctly if days are under the cap', async () => {
-        // Remaining days is 15 (under cap)
-        mockLeaveEntitlementModel.findOne.mockResolvedValue({ remaining: 15, leaveTypeId: mockLeaveTypeId });
-        
-        const result = await service.processFinalSettlement(employeeId, dailyRate);
+      // Remaining days is 15 (under cap)
+      mockLeaveEntitlementModel.findOne.mockResolvedValue({
+        remaining: 15,
+        leaveTypeId: mockLeaveTypeId,
+      });
 
-        // Expect calculation based on 15 days
-        expect(result.unusedDays).toBe(15);
-        expect(result.encashmentAmount).toBe(15 * dailyRate);
-        expect(mockPayrollExecutionService.processFinalPayment).toHaveBeenCalledWith(
-          expect.objectContaining({ encashmentAmount: 1500 })
-        );
+      const result = await service.processFinalSettlement(
+        employeeId,
+        dailyRate,
+      );
+
+      // Expect calculation based on 15 days
+      expect(result.unusedDays).toBe(15);
+      expect(result.encashmentAmount).toBe(15 * dailyRate);
+      expect(
+        mockPayrollExecutionService.processFinalPayment,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({ encashmentAmount: 1500 }),
+      );
     });
   });
 

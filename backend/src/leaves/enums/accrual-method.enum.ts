@@ -3,5 +3,4 @@ export enum AccrualMethod {
   YEARLY = 'yearly',
   PER_TERM = 'per-term',
   QUARTERLY = 'QUARTERLY', // ADD THIS
-
 }

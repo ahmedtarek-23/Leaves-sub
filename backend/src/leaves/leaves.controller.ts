@@ -1,15 +1,15 @@
-import { 
-    Controller, 
-    Get, 
-    Post, 
-    Put, 
-    Body, 
-    Param, 
-    UsePipes, 
-    ValidationPipe,
-    Query 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  UsePipes,
+  ValidationPipe,
+  Query,
 } from '@nestjs/common';
-import { LeavesService } from './leaves.service'; 
+import { LeavesService } from './leaves.service';
 // Import DTOs for type safety (you will need to create these files)
 // import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 // import { CreateLeavePolicyDto } from './dto/create-leave-policy.dto';
@@ -26,7 +26,10 @@ export class LeavesController {
    */
   @Post('request')
   @UsePipes(new ValidationPipe({ transform: true })) // Enables validation and automatic transformation
-  async submitRequest(@Body() createRequestDto: any /* Replace 'any' with CreateLeaveRequestDto */) { 
+  async submitRequest(
+    @Body()
+    createRequestDto: any /* Replace 'any' with CreateLeaveRequestDto */,
+  ) {
     return this.leavesService.submitRequest(createRequestDto);
   }
 
@@ -35,7 +38,7 @@ export class LeavesController {
    * Retrieves the current leave balances for an employee (Accrued, Taken, Remaining) (REQ-040).
    */
   @Get('balances/:employeeId')
-  async getEmployeeBalance(@Param('employeeId') employeeId: string) { 
+  async getEmployeeBalance(@Param('employeeId') employeeId: string) {
     return this.leavesService.getEmployeeBalance(employeeId);
   }
 
@@ -48,25 +51,28 @@ export class LeavesController {
    */
   @Put('request/:id/review')
   async reviewRequest(
-    @Param('id') requestId: string, 
-    @Body() reviewData: { 
-        approverId: string, 
-        action: 'APPROVE' | 'REJECT' | 'OVERRIDE', 
-        isHR: boolean 
-    }
+    @Param('id') requestId: string,
+    @Body()
+    reviewData: {
+      approverId: string;
+      action: 'APPROVE' | 'REJECT' | 'OVERRIDE';
+      isHR: boolean;
+    },
   ) {
     // Service logic handles routing based on 'isHR' and 'action'
     return this.leavesService.processReview(requestId, reviewData);
   }
 
   // --- 3. HR/System Admin Configuration ---
-  
+
   /**
    * POST /leaves/policies
    * Creates a new standardized leave policy (e.g., Annual, Sick). (REQ-006)
    */
-  @Post('policies') 
-  async createPolicy(@Body() policyData: any /* Replace 'any' with CreateLeavePolicyDto */) { 
+  @Post('policies')
+  async createPolicy(
+    @Body() policyData: any /* Replace 'any' with CreateLeavePolicyDto */,
+  ) {
     return this.leavesService.createPolicy(policyData);
   }
 
@@ -75,7 +81,15 @@ export class LeavesController {
    * Allows HR Admin to perform manual adjustments (e.g., for audit findings, bulk updates). (REQ-013)
    */
   @Put('balances/adjust')
-  async adjustBalance(@Body() adjustmentData: { employeeId: string, typeCode: string, amount: number, justification: string }) {
+  async adjustBalance(
+    @Body()
+    adjustmentData: {
+      employeeId: string;
+      typeCode: string;
+      amount: number;
+      justification: string;
+    },
+  ) {
     // The service must log this action to maintain a full audit trail (BR 17)
     return this.leavesService.manualAdjustBalance(adjustmentData);
   }
@@ -89,85 +103,92 @@ export class LeavesController {
     return this.leavesService.getIrregularLeaveReport(managerId);
   }
 
-@Get('request')
-async getRequests(@Query() query: any) {
-  return this.leavesService.getRequests(query);
-}
-
-@Get('request/:id')
-async getRequestById(@Param('id') requestId: string) {
-  return this.leavesService.getRequests(requestId);
-}
-
-@Put('request/:id/cancel')
-async cancelRequest(
-  @Param('id') requestId: string,
-  @Body() data: { employeeId: string }
-) {
-  return this.leavesService.cancelRequest(requestId, data.employeeId);
-}
-
-// Add these endpoints to your existing LeavesController
-
-@Post('bulk-review')
-async bulkReview(@Body() bulkReviewData: {
-  requestIds: string[];
-  approverId: string;
-  action: 'APPROVE' | 'REJECT';
-  isHR: boolean;
-  comments?: string;
-}) {
-  return this.leavesService.bulkReview(bulkReviewData);
-}
-
-@Post('request/:id/attachments')
-async addAttachment(
-  @Param('id') requestId: string,
-  @Body() attachmentData: {
-    fileUrl: string;
-    fileName: string;
-    fileType: string;
-    uploadedBy: string;
+  @Get('request')
+  async getRequests(@Query() query: any) {
+    return this.leavesService.getRequests(query);
   }
-) {
-  return this.leavesService.addAttachment(requestId, attachmentData);
-}
 
-@Put('request/:id/verify-medical')
-async verifyMedicalDocuments(
-  @Param('id') requestId: string,
-  @Body() verificationData: {
-    verifiedBy: string;
-    isValid: boolean;
-    comments?: string;
+  @Get('request/:id')
+  async getRequestById(@Param('id') requestId: string) {
+    return this.leavesService.getRequests(requestId);
   }
-) {
-  return this.leavesService.verifyMedicalDocuments(requestId, verificationData);
-}
 
-@Put('request/:id/flag')
-async flagLeaveRequest(
-  @Param('id') requestId: string,
-  @Body() flagData: {
-    flaggedBy: string;
-    reason: string;
-    priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  }
-) {
-  return this.leavesService.flagLeaveRequest(requestId, flagData);
-}
-
-// In your leaves.controller.ts
-@Post('encash/:id')
-async encashLeave(
+  @Put('request/:id/cancel')
+  async cancelRequest(
     @Param('id') requestId: string,
-    @Body() encashData: { dailySalaryRate: number }
-) {
+    @Body() data: { employeeId: string },
+  ) {
+    return this.leavesService.cancelRequest(requestId, data.employeeId);
+  }
+
+  // Add these endpoints to your existing LeavesController
+
+  @Post('bulk-review')
+  async bulkReview(
+    @Body()
+    bulkReviewData: {
+      requestIds: string[];
+      approverId: string;
+      action: 'APPROVE' | 'REJECT';
+      isHR: boolean;
+      comments?: string;
+    },
+  ) {
+    return this.leavesService.bulkReview(bulkReviewData);
+  }
+
+  @Post('request/:id/attachments')
+  async addAttachment(
+    @Param('id') requestId: string,
+    @Body()
+    attachmentData: {
+      fileUrl: string;
+      fileName: string;
+      fileType: string;
+      uploadedBy: string;
+    },
+  ) {
+    return this.leavesService.addAttachment(requestId, attachmentData);
+  }
+
+  @Put('request/:id/verify-medical')
+  async verifyMedicalDocuments(
+    @Param('id') requestId: string,
+    @Body()
+    verificationData: {
+      verifiedBy: string;
+      isValid: boolean;
+      comments?: string;
+    },
+  ) {
+    return this.leavesService.verifyMedicalDocuments(
+      requestId,
+      verificationData,
+    );
+  }
+
+  @Put('request/:id/flag')
+  async flagLeaveRequest(
+    @Param('id') requestId: string,
+    @Body()
+    flagData: {
+      flaggedBy: string;
+      reason: string;
+      priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    },
+  ) {
+    return this.leavesService.flagLeaveRequest(requestId, flagData);
+  }
+
+  // In your leaves.controller.ts
+  @Post('encash/:id')
+  async encashLeave(
+    @Param('id') requestId: string,
+    @Body() encashData: { dailySalaryRate: number },
+  ) {
     return this.leavesService.encashLeave({
-        requestId,
-        dailySalaryRate: encashData.dailySalaryRate
+      requestId,
+      dailySalaryRate: encashData.dailySalaryRate,
     });
-}
-
-
+  }
 }

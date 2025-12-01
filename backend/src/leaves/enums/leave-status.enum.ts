@@ -4,6 +4,5 @@ export enum LeaveStatus {
   REJECTED = 'rejected',
   CANCELLED = 'cancelled',
   ESCALATED = 'ESCALATED',
-  ENCASHED = 'ENCASHED', 
-  
+  ENCASHED = 'ENCASHED',
 }

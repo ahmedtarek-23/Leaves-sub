@@ -13,11 +13,6 @@ export class LeaveRequest {
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({
-    type: { from: Date, to: Date },
-    required: true,
-  })
-
   @Prop({ required: true })
   startDate: Date;
 
@@ -60,12 +55,13 @@ export class LeaveRequest {
   syncedAt?: Date;
 
   @Prop({
+    type: String,
     enum: LeaveStatus,
     default: LeaveStatus.PENDING,
   })
   status: LeaveStatus;
 
-   @Prop({ default: false })
+  @Prop({ default: false })
   requiresHRConversion: boolean;
 
   @Prop({ default: false })
@@ -76,7 +72,7 @@ export class LeaveRequest {
 
   @Prop()
   roundedDuration?: number;
- 
+
   @Prop({ default: 0 })
   excessDays: number;
 
@@ -107,7 +103,7 @@ export class LeaveRequest {
   @Prop()
   flagReason?: string;
 
-  @Prop({ enum: ['LOW', 'MEDIUM', 'HIGH'] })
+  @Prop({ type: String, enum: ['LOW', 'MEDIUM', 'HIGH'] })
   flagPriority?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Employee' })
@@ -119,18 +115,17 @@ export class LeaveRequest {
   @Prop({ default: false })
   isEscalated?: boolean;
 
-@Prop()
+  @Prop()
   escalatedAt?: Date;
 
-@Prop({ type: Date, default: Date.now })
+  @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 
-@Prop({ type: Date, default: Date.now })
+  @Prop({ type: Date, default: Date.now })
   updatedAt: Date;
 
-@Prop()
+  @Prop()
   rejectionReason?: string;
 }
 
-export const LeaveRequestSchema =
-  SchemaFactory.createForClass(LeaveRequest);
+export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);
