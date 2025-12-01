@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LeavesService } from './leaves.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { LeaveStatus } from './enums/leave-status.enum'; // Import your Enum
 import { Types } from 'mongoose';
 
@@ -138,6 +138,10 @@ describe('LeavesService', () => {
       employeeId: 'E001',
     };
 
+      const hrUser = { employeeId: 'HR001', role: 'HR_ADMIN' } as any;
+      const managerUser = { employeeId: 'MGR001', role: 'DEPARTMENT_HEAD' } as any;
+      const employeeUser = { employeeId: 'E001', role: 'DEPARTMENT_EMPLOYEE' } as any;
+
     it('should set status to APPROVED and trigger integration if HR approves', async () => {
       mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
       mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({
@@ -149,6 +153,7 @@ describe('LeavesService', () => {
       const result = await service.processReview(
         mockApprovedRequest.id,
         reviewData,
+        hrUser,
       );
 
       // Check status and integration calls
@@ -168,11 +173,71 @@ describe('LeavesService', () => {
       const result = await service.processReview(
         mockApprovedRequest.id,
         reviewData,
+        managerUser,
       );
+    it('should forbid an employee from approving their own request (self-approval)', async () => {
+      mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
+      const reviewData = { action: 'APPROVE', decidedBy: 'E001' };
+      await expect(
+        service.processReview(mockApprovedRequest.id, reviewData, employeeUser),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should allow HR to perform OVERRIDE', async () => {
+      mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
+      mockLeaveRequestModel.findByIdAndUpdate.mockResolvedValue({ status: LeaveStatus.APPROVED });
+      const reviewData = { action: 'OVERRIDE', isHR: true, decidedBy: 'HR001' };
+      const result = await service.processReview(mockApprovedRequest.id, reviewData, hrUser);
+      expect(result.status).toBe(LeaveStatus.APPROVED);
+    });
+
+    it('should forbid non-HR override attempts', async () => {
+      mockLeaveRequestModel.findById.mockResolvedValue(mockApprovedRequest);
+      const reviewData = { action: 'OVERRIDE', isHR: false, decidedBy: 'MGR001' };
+      await expect(
+        service.processReview(mockApprovedRequest.id, reviewData, managerUser),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
 
       // Check status and integration calls
       expect(result.status).toBe(LeaveStatus.REJECTED);
       expect(mockTimeManagementService.blockAttendance).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('permissions', () => {
+    it('should forbid non-HR user from manualAdjustBalance', async () => {
+      const notHrUser = { employeeId: 'E002', role: 'DEPARTMENT_EMPLOYEE' } as any;
+      const data = { employeeId: 'E001', leaveTypeId: 'T1', amount: 2, reason: 'Correction', hrUserId: 'HR001' };
+      await expect(service.manualAdjustBalance(data, notHrUser)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should allow HR user to adjust balance', async () => {
+      const hrUser = { employeeId: 'HR001', role: 'HR_ADMIN' } as any;
+      const data = { employeeId: 'E001', leaveTypeId: 'T1', amount: 2, reason: 'Correction', hrUserId: 'HR001' };
+      mockLeaveEntitlementModel.findOneAndUpdate.mockResolvedValue({ remaining: 12 });
+      const res = await service.manualAdjustBalance(data, hrUser);
+      expect(res).toBeDefined();
+    });
+
+    it('should forbid non-HR user from encash leave', async () => {
+      const notHrUser = { employeeId: 'E002', role: 'DEPARTMENT_EMPLOYEE' } as any;
+      await expect(service.encashLeave({ requestId: 'R1', dailySalaryRate: 100 }, notHrUser)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should forbid delegation by a user who is not the delegator', async () => {
+      const request = { _id: 'R1', approvalFlow: [{ role: 'Manager', status: 'PENDING' }], employeeId: 'E002' };
+      mockLeaveRequestModel.findById.mockResolvedValue(request);
+      const user = { employeeId: 'NOTDELEGATOR', role: 'DEPARTMENT_HEAD' } as any;
+      await expect(service.delegateApproval('R1', 'DELEGATE1', 'DELEGATOR1', user)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('should allow delegation by the correct delegator', async () => {
+      const request = { _id: 'R1', approvalFlow: [{ role: 'Manager', status: 'PENDING' }], employeeId: 'E002', save: jest.fn() };
+      mockLeaveRequestModel.findById.mockResolvedValue(request);
+      const user = { employeeId: 'DELEGATOR1', role: 'DEPARTMENT_HEAD' } as any;
+      const res = await service.delegateApproval('R1', 'DELEGATE1', 'DELEGATOR1', user);
+      expect(res).toBeDefined();
     });
   });
 

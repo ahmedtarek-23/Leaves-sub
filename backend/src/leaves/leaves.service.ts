@@ -18,6 +18,18 @@ import { LeaveCategory } from './models/leave-category.schema';
 import { Calendar } from './models/calendar.schema';
 import { Attachment } from './models/attachment.schema';
 import { NotificationService } from './notifications/notification.service';
+// DTOs
+import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
+import { ReviewRequestDto } from './dto/review-request.dto';
+import { AdjustBalanceDto } from './dto/adjust-balance.dto';
+import { EncashLeaveDto } from './dto/encash-leave.dto';
+import { AttachmentDto } from './dto/attachment.dto';
+import { VerifyMedicalDto } from './dto/verify-medical.dto';
+import { FlagLeaveDto } from './dto/flag-leave.dto';
+import { BulkReviewDto } from './dto/bulk-review.dto';
+import { ModifyLeaveRequestDto } from './dto/modify-leave-request.dto';
+import { CreateLeavePolicyDto } from './dto/create-leave-policy.dto';
+import { GetRequestsFilterDto } from './dto/get-requests-filter.dto';
 
 // Import Enums
 import { LeaveStatus } from './enums/leave-status.enum'; 
@@ -54,7 +66,7 @@ export class LeavesService {
     ) {}
 
     // REQ-015: Handles submission and validation (BR 31, BR 29)
-    async submitRequest(requestData: any): Promise<LeaveRequest> { 
+    async submitRequest(requestData: CreateLeaveRequestDto): Promise<LeaveRequest> { 
         const employeeId = requestData.employeeId;
         const requestedDays = requestData.durationDays;
         const leaveTypeId = requestData.leaveTypeId;
@@ -268,7 +280,7 @@ export class LeavesService {
     }
 
     // REQ-021, REQ-025: Handles multi-level approval and finalization
-    async processReview(requestId: string, reviewData: any): Promise<LeaveRequest> {
+    async processReview(requestId: string, reviewData: ReviewRequestDto, user?: AuthUser): Promise<LeaveRequest> {
         const request = await this.leaveRequestModel.findById(requestId).exec();
         
         // Initial Null Check
@@ -276,9 +288,41 @@ export class LeavesService {
             throw new NotFoundException(`Request ${requestId} not found.`);
         }
 
+        // Permission checks at service level
+        if (user && String(request.employeeId) === String(user.employeeId)) {
+            // Employee cannot approve their own request
+            throw new ForbiddenException('Self-approval is not allowed');
+        }
+
         let newStatus: LeaveStatus = request.status as LeaveStatus;
         
         // ... your existing status determination logic ...
+
+        // Find pending step and enforce role checks before updating
+        const pendingIndex = request.approvalFlow.findIndex((r) => r.status === 'PENDING');
+        if (pendingIndex === -1) throw new BadRequestException('No pending approvals');
+        const pendingStep = request.approvalFlow[pendingIndex];
+        const stepRole = pendingStep?.role?.toString()?.toLowerCase();
+        const userRole = (user && (user.role || (user.roles && user.roles[0]))) as UserRole | undefined;
+
+        // HR-only override
+        if ((reviewData?.action ?? '').toString().toUpperCase() === 'OVERRIDE') {
+            if (userRole !== UserRole.HR_ADMIN && userRole !== UserRole.HR_MANAGER) {
+                throw new ForbiddenException('Only HR roles can perform override');
+            }
+        }
+        // Step specific role enforcement: if pending step is HR then user must be HR
+        if (stepRole && stepRole.includes('hr')) {
+            if (userRole !== UserRole.HR_ADMIN && userRole !== UserRole.HR_MANAGER) {
+                throw new ForbiddenException('Approver must be HR for this step');
+            }
+        }
+        // If step role includes manager, ensure approver is department head
+        if (stepRole && stepRole.includes('manager')) {
+            if (userRole !== UserRole.DEPARTMENT_HEAD) {
+                throw new ForbiddenException('Approver must be the department head for this step');
+            }
+        }
 
         // Update the record status and log the action
         const updatedRequest = await this.leaveRequestModel.findByIdAndUpdate(
@@ -311,7 +355,7 @@ export class LeavesService {
     }
 
     // REQ-006: Policy Management
-    async createPolicy(policyData: any): Promise<LeavePolicy> {
+    async createPolicy(policyData: CreateLeavePolicyDto): Promise<LeavePolicy> {
         if (!policyData.payrollPayCode) {
             throw new BadRequestException('Policy must include a payroll pay code (REQ-006).');
         }
@@ -320,11 +364,16 @@ export class LeavesService {
     }
 
     // REQ-013, BR 17: Auditing/Management
-    async manualAdjustBalance(adjustmentData: any): Promise<any> {
+    async manualAdjustBalance(adjustmentData: AdjustBalanceDto, user?: AuthUser): Promise<any> {
         const { employeeId, leaveTypeId, amount, reason, hrUserId } = adjustmentData; 
 
         if (!reason || !hrUserId) {
             throw new BadRequestException('Justification (reason) and HR User ID are required for manual adjustment (BR 17).');
+        }
+
+        // Only HR roles can perform manual adjustments
+        if (user && user.role !== UserRole.HR_ADMIN && user.role !== UserRole.HR_MANAGER) {
+            throw new ForbiddenException('Only HR users can perform manual adjustments');
         }
 
         // 1. Update the balance
@@ -492,7 +541,7 @@ export class LeavesService {
     }
 
     // REQ-027: Bulk review for multiple requests
-async bulkReview(bulkReviewData: {
+    async bulkReview(bulkReviewData: BulkReviewDto): Promise<{ results: Array<{ requestId: string; status: string; result?: any; error?: string }> }> {
     requestIds: string[];
     approverId: string;
     action: 'APPROVE' | 'REJECT';
@@ -529,7 +578,7 @@ async bulkReview(bulkReviewData: {
 }
 
     // Enhance your existing getRequests method:
-    async getRequests(filters: any): Promise<LeaveRequest[]> {
+    async getRequests(filters: GetRequestsFilterDto): Promise<LeaveRequest[]> {
         const query: any = {};
 
         // Existing filters
@@ -557,7 +606,7 @@ async bulkReview(bulkReviewData: {
     }
 
     // ADD: Get team leaves specifically (REQ-035)
-    async getTeamLeaves(managerId: string, filters: any): Promise<LeaveRequest[]> {
+    async getTeamLeaves(managerId: string, filters: GetRequestsFilterDto): Promise<LeaveRequest[]> {
         const query: any = { managerId: new Types.ObjectId(managerId) };
         
         if (filters.leaveTypeId) query.leaveTypeId = new Types.ObjectId(filters.leaveTypeId);
@@ -572,7 +621,7 @@ async bulkReview(bulkReviewData: {
     }
 
     // REQ-016: Add attachment to leave request with validation
-    async addAttachment(requestId: string, attachmentData: {
+    async addAttachment(requestId: string, attachmentData: AttachmentDto): Promise<Attachment> {
         fileUrl: string;
         fileName: string;
         fileType: string;
@@ -617,7 +666,7 @@ async bulkReview(bulkReviewData: {
     }
 
     // REQ-028: Verify medical documents with enhanced logic
-    async verifyMedicalDocuments(requestId: string, verificationData: {
+    async verifyMedicalDocuments(requestId: string, verificationData: VerifyMedicalDto): Promise<LeaveRequest> {
         verifiedBy: string;
         isValid: boolean;
         comments?: string;
@@ -683,7 +732,7 @@ async bulkReview(bulkReviewData: {
 }
 
     // REQ-039: Flag leave request
-    async flagLeaveRequest(requestId: string, flagData: {
+    async flagLeaveRequest(requestId: string, flagData: FlagLeaveDto): Promise<LeaveRequest> {
         flaggedBy: string;
         reason: string;
         priority: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -881,13 +930,18 @@ async applyCarryForward(): Promise<void> {
     }
 
     // Encash leave for a specific leave request
-    async encashLeave(encashData: { requestId: string; dailySalaryRate: number; employeeId?: string; days?: number; reason?: string;}): Promise<any> {
+    async encashLeave(encashData: EncashLeaveDto, user?: AuthUser): Promise<any> {
     const { requestId, dailySalaryRate } = encashData;
     
     // 1. Fetch the leave request
     const request = await this.leaveRequestModel.findById(requestId).exec();
     if (!request) {
         throw new NotFoundException(`Leave request ${requestId} not found`);
+    }
+
+    // Permission check: only HR or SYSTEM_ADMIN roles can perform encash (confirming endpoint restrictions)
+    if (user && ![UserRole.HR_ADMIN, UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN].includes(user.role as any)) {
+        throw new ForbiddenException('Insufficient permissions to perform encash');
     }
 
     // 2. Only allow encash for APPROVED annual leave
@@ -944,4 +998,25 @@ async applyCarryForward(): Promise<void> {
         encashmentAmount
     };
 }
+
+    // Delegation endpoint processing for pending approvals
+    async delegateApproval(
+        requestId: string,
+        delegateTo: string,
+        delegatorId: string,
+        user?: AuthUser,
+    ) {
+        const request = await this.leaveRequestModel.findById(requestId).exec();
+        if (!request) throw new NotFoundException('Leave request not found');
+        const idx = request.approvalFlow.findIndex((s) => s.status === 'PENDING');
+        if (idx === -1) throw new BadRequestException('No pending approvals to delegate');
+        // Ensure the acting user is the declared delegator
+        if (user && String(user.employeeId) !== String(delegatorId)) {
+            throw new ForbiddenException('Delegation must be initiated by the delegator');
+        }
+        request.escalatedTo = new Types.ObjectId(delegateTo);
+        request.updatedBy = new Types.ObjectId(delegatorId);
+        await request.save();
+        return request;
+    }
 }
