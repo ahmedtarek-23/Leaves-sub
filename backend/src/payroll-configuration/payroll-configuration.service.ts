@@ -48,10 +48,6 @@ import { UpdateTerminationBenefitsDto } from './dto/update-termination-benefits.
 import { ChangeStatusDto } from './dto/change-status.dto';
 import { ConfigStatus } from './enums/payroll-configuration-enums';
 
-// --- Integration ---
-import { OrganizationStructureService } from '../organization-structure/organization-structure.service';
-import { EmployeeProfileService } from '../employee-profile/employee-profile.service';
-
 @Injectable()
 export class PayrollConfigurationService {
   constructor(
@@ -65,10 +61,6 @@ export class PayrollConfigurationService {
     @InjectModel(payType.name) private payTypeModel: Model<payType>,
     @InjectModel(payrollPolicies.name) private payrollPoliciesModel: Model<payrollPolicies>,
     @InjectModel(terminationAndResignationBenefits.name) private termModel: Model<terminationAndResignationBenefits>,
-
-    // Integration
-    private readonly orgService: OrganizationStructureService,
-    private readonly empService: EmployeeProfileService,
   ) {}
 
   // ===========================================================================
@@ -209,6 +201,10 @@ export class PayrollConfigurationService {
     Object.assign(record, dto);
     record.createdBy = new Types.ObjectId(user.userId);
     return record.save();
+  }
+
+  async getPayrollPolicies() {
+    return this.payrollPoliciesModel.find().exec();
   }
 
   async changePayrollPolicyStatus(id: string, dto: ChangeStatusDto, user: AuthUser) {
@@ -353,6 +349,10 @@ export class PayrollConfigurationService {
     return record.save();
   }
 
+  async getPayTypes() {
+    return this.payTypeModel.find().exec();
+  }
+
   async approvePayType(id: string, dto: ChangeStatusDto, user: AuthUser) {
     return this.approveGeneric(this.payTypeModel, id, dto, user);
   }
@@ -398,6 +398,10 @@ export class PayrollConfigurationService {
     return record.save();
   }
 
+  async getSigningBonuses() {
+    return this.bonusModel.find().exec();
+  }
+
   async approveSigningBonus(id: string, dto: ChangeStatusDto, user: AuthUser) {
     return this.approveGeneric(this.bonusModel, id, dto, user);
   }
@@ -430,6 +434,10 @@ export class PayrollConfigurationService {
     Object.assign(record, dto);
     record.createdBy = new Types.ObjectId(user.userId);
     return record.save();
+  }
+
+  async getTerminationBenefits() {
+    return this.termModel.find().exec();
   }
 
   async approveTerminationBenefit(id: string, dto: ChangeStatusDto, user: AuthUser) {

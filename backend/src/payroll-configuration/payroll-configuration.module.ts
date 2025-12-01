@@ -16,10 +16,6 @@ import { payType, payTypeSchema } from './models/payType.schema';
 import { terminationAndResignationBenefits, terminationAndResignationBenefitsSchema } from './models/terminationAndResignationBenefits';
 import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies.schema';
 
-// Integration Modules
-import { OrganizationStructureModule } from '../organization-structure/organization-structure.module';
-import { EmployeeProfileModule } from '../employee-profile/employee-profile.module';
-
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -34,8 +30,6 @@ import { EmployeeProfileModule } from '../employee-profile/employee-profile.modu
       { name: payrollPolicies.name, schema: payrollPoliciesSchema },
     ]),
     AuthModule,
-    OrganizationStructureModule,
-    EmployeeProfileModule,
   ],
   controllers: [PayrollConfigurationController],
   providers: [PayrollConfigurationService],
