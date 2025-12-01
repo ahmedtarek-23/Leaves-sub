@@ -27,8 +27,6 @@ import { OffboardingModule } from './offboarding/offboarding.module';
     EmployeeProfileModule, 
     OrganizationStructureModule, 
     PerformanceModule,
-    OnboardingModule,
-    OffboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
