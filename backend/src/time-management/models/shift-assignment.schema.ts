@@ -6,29 +6,29 @@ import { ShiftAssignmentStatus } from "./enums/index";
 export type ShiftAssignmentDocument = HydratedDocument<ShiftAssignment>;
 
 @Schema()
-export class ShiftAssignment{
-    @Prop({type: Types.ObjectId, ref: 'EmployeeProfile'})
+export class ShiftAssignment {
+    @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
     employeeId?: Types.ObjectId;
 
-    @Prop({type: Types.ObjectId, ref: 'Department'})
+    @Prop({ type: Types.ObjectId, ref: 'Department' })
     departmentId?: Types.ObjectId;
 
-    @Prop({type: Types.ObjectId, ref: 'Position'})
+    @Prop({ type: Types.ObjectId, ref: 'Position' })
     positionId?: Types.ObjectId;
 
-    @Prop({type: Types.ObjectId, ref: 'Shift', required: true})
+    @Prop({ type: Types.ObjectId, ref: 'Shift', required: true })
     shiftId: Types.ObjectId;
 
-    @Prop({type: Types.ObjectId, ref: 'ScheduleRule'})
+    @Prop({ type: Types.ObjectId, ref: 'ScheduleRule' })
     scheduleRuleId?: Types.ObjectId;
 
-    @Prop({required: true})
+    @Prop({ required: true })
     startDate: Date;
 
     @Prop()
     endDate?: Date; //null means ongoing
 
-    @Prop({enum: ShiftAssignmentStatus, default: ShiftAssignmentStatus.PENDING})
+    @Prop({ type: String, enum: ShiftAssignmentStatus, default: ShiftAssignmentStatus.PENDING })
     status: ShiftAssignmentStatus;
 }
 
