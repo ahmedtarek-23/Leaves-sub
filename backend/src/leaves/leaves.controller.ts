@@ -88,4 +88,86 @@ export class LeavesController {
   async getIrregularLeaveReport(@Query('managerId') managerId: string) {
     return this.leavesService.getIrregularLeaveReport(managerId);
   }
+
+@Get('request')
+async getRequests(@Query() query: any) {
+  return this.leavesService.getRequests(query);
+}
+
+@Get('request/:id')
+async getRequestById(@Param('id') requestId: string) {
+  return this.leavesService.getRequests(requestId);
+}
+
+@Put('request/:id/cancel')
+async cancelRequest(
+  @Param('id') requestId: string,
+  @Body() data: { employeeId: string }
+) {
+  return this.leavesService.cancelRequest(requestId, data.employeeId);
+}
+
+// Add these endpoints to your existing LeavesController
+
+@Post('bulk-review')
+async bulkReview(@Body() bulkReviewData: {
+  requestIds: string[];
+  approverId: string;
+  action: 'APPROVE' | 'REJECT';
+  isHR: boolean;
+  comments?: string;
+}) {
+  return this.leavesService.bulkReview(bulkReviewData);
+}
+
+@Post('request/:id/attachments')
+async addAttachment(
+  @Param('id') requestId: string,
+  @Body() attachmentData: {
+    fileUrl: string;
+    fileName: string;
+    fileType: string;
+    uploadedBy: string;
+  }
+) {
+  return this.leavesService.addAttachment(requestId, attachmentData);
+}
+
+@Put('request/:id/verify-medical')
+async verifyMedicalDocuments(
+  @Param('id') requestId: string,
+  @Body() verificationData: {
+    verifiedBy: string;
+    isValid: boolean;
+    comments?: string;
+  }
+) {
+  return this.leavesService.verifyMedicalDocuments(requestId, verificationData);
+}
+
+@Put('request/:id/flag')
+async flagLeaveRequest(
+  @Param('id') requestId: string,
+  @Body() flagData: {
+    flaggedBy: string;
+    reason: string;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  }
+) {
+  return this.leavesService.flagLeaveRequest(requestId, flagData);
+}
+
+// In your leaves.controller.ts
+@Post('encash/:id')
+async encashLeave(
+    @Param('id') requestId: string,
+    @Body() encashData: { dailySalaryRate: number }
+) {
+    return this.leavesService.encashLeave({
+        requestId,
+        dailySalaryRate: encashData.dailySalaryRate
+    });
+}
+
+
 }

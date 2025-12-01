@@ -11,6 +11,8 @@ import { LeaveEntitlement } from './models/leave-entitlement.schema';
 // Import dependent services
 import { TimeManagementService } from '../time-management/time-management.service';
 import { EmployeeProfileService } from '../employee-profile/employee-profile.service'; 
+import { NotificationService } from './notifications/notification.service';
+
 // Note: Payroll dependency is likely needed, but we'll use the service injection you defined.
 
 @Injectable()
@@ -28,6 +30,7 @@ export class LeavesService {
     // 2. Inject dependent services (for M2 integration calls)
     private readonly timeManagementService: TimeManagementService,
     private readonly employeeProfileService: EmployeeProfileService,
+    private readonly notificationService: NotificationService, 
     // Add Payroll Service injection here if you haven't yet
     // private readonly payrollProcessingService: PayrollProcessingService,
   ) {}
