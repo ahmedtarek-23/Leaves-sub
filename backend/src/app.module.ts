@@ -14,7 +14,8 @@ import { OrganizationStructureModule } from './organization-structure/organizati
 import { PerformanceModule } from './performance/performance.module';
 import { PayrollConfigurationModule } from './payroll-configuration/payroll-configuration.module';
 import { PayrollExecutionModule } from './payroll-execution/payroll-execution.module';
-
+import { OnboardingModule } from './onboarding/onboarding.module';
+import { OffboardingModule } from './offboarding/offboarding.module';
 /* 1. import Auth module */
 import { AuthModule } from './auth';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -45,6 +46,8 @@ import { RolesGuard } from './auth/guards/roles.guard';
     EmployeeProfileModule,
     OrganizationStructureModule,
     PerformanceModule,
+    OnboardingModule,
+    OffboardingModule,
   ],
   controllers: [AppController],
   providers: [
