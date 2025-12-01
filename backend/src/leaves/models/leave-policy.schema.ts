@@ -45,6 +45,16 @@ export class LeavePolicy {
     },
   })
   eligibility: Record<string, any>;
+
+  @Prop({ default: 180 })
+  sickCycleMaxDays: number;
+
+  @Prop({ required: true })
+  payrollPayCode: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
 }
 
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);
