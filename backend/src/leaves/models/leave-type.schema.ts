@@ -27,7 +27,7 @@ export class LeaveType {
   @Prop({ default: false })
   requiresAttachment: boolean;
 
-  @Prop({ type: String, enum: Object.values(AttachmentType) })
+  @Prop({ type: String, enum: AttachmentType })
   attachmentType?: AttachmentType;
 
   @Prop({ default: null })
@@ -35,12 +35,6 @@ export class LeaveType {
 
   @Prop({ default: null })
   maxDurationDays?: number;
-
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  createdBy?: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  updatedBy?: Types.ObjectId;
 }
 
 export const LeaveTypeSchema = SchemaFactory.createForClass(LeaveType);

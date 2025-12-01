@@ -39,11 +39,23 @@ export class LeaveEntitlement {
   @Prop()
   nextResetDate?: Date;
 
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  createdBy?: Types.ObjectId;
+  @Prop({ default: 0 })
+  accrued: number;
 
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  updatedBy?: Types.ObjectId;
+  @Prop({ default: 0 })
+  carriedOver: number;
+
+  @Prop({ default: 0 })
+  previousYearBalance: number;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ default: new Date().getFullYear() })
+  fiscalYear: number;
+
+  @Prop()
+  lastCarryForwardDate?: Date;
 }
 
 export const LeaveEntitlementSchema =

@@ -12,7 +12,7 @@ export class LeaveAdjustment {
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({ type: String, enum: Object.values(AdjustmentType), required: true })
+  @Prop({ type: String, enum: AdjustmentType, required: true })
   adjustmentType: AdjustmentType;
 
   @Prop({ required: true })
@@ -23,13 +23,8 @@ export class LeaveAdjustment {
 
   @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
   hrUserId: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  createdBy?: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  updatedBy?: Types.ObjectId;
 }
 
 export const LeaveAdjustmentSchema =
   SchemaFactory.createForClass(LeaveAdjustment);
+

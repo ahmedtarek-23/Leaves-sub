@@ -10,7 +10,7 @@ export class LeavePolicy {
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({ type: String, enum: Object.values(AccrualMethod), default: AccrualMethod.MONTHLY })
+  @Prop({ type: String, enum: AccrualMethod, default: AccrualMethod.MONTHLY })
   accrualMethod: AccrualMethod;
 
   @Prop({ default: 0 })
@@ -28,7 +28,7 @@ export class LeavePolicy {
   @Prop()
   expiryAfterMonths?: number;
 
-  @Prop({ type: String, enum: Object.values(RoundingRule), default: RoundingRule.NONE })
+  @Prop({ type: String, enum: RoundingRule, default: RoundingRule.NONE })
   roundingRule: RoundingRule;
 
   @Prop({ default: 0 })
@@ -46,11 +46,14 @@ export class LeavePolicy {
   })
   eligibility: Record<string, any>;
 
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  createdBy?: Types.ObjectId;
+  @Prop({ default: 180 })
+  sickCycleMaxDays: number;
 
-  @Prop({ type: Types.ObjectId, ref: 'Employee' })
-  updatedBy?: Types.ObjectId;
+  @Prop({ required: true })
+  payrollPayCode: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);
