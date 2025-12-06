@@ -77,7 +77,7 @@ export class PayrollConfigurationService {
 
     // Role Check: Only Managers/Admins can Approve
     if (dto.status === ConfigStatus.APPROVED) {
-      const allowedRoles = [UserRole.PAYROLL_MANAGER, UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN];
+      const allowedRoles = [UserRole.PAYROLL_SPECIALIST, UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN];
       if (!allowedRoles.includes(user.role)) {
         throw new ForbiddenException('Only Managers can approve configurations');
       }
