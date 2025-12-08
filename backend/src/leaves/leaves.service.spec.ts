@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LeavesService } from './leaves.service';
+<<<<<<< Updated upstream
 import { getModelToken } from '@nestjs/mongoose';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { LeaveStatus } from './enums/leave-status.enum'; // Import your Enum
@@ -34,12 +35,15 @@ const mockPayrollExecutionService = {
 const mockEmployeeProfileService = {
   // Mock any required methods here
 };
+=======
+>>>>>>> Stashed changes
 
 describe('LeavesService', () => {
   let service: LeavesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+<<<<<<< Updated upstream
       providers: [
         LeavesService,
         // Provide Mongoose Mocks using their Model Tokens
@@ -54,6 +58,9 @@ describe('LeavesService', () => {
         { provide: 'PayrollExecutionService', useValue: mockPayrollExecutionService },
         { provide: 'EmployeeProfileService', useValue: mockEmployeeProfileService },
       ],
+=======
+      providers: [LeavesService],
+>>>>>>> Stashed changes
     }).compile();
 
     service = module.get<LeavesService>(LeavesService);
@@ -62,6 +69,7 @@ describe('LeavesService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+<<<<<<< Updated upstream
 
   // =======================================================================
   // TEST SUITE 1: SUBMISSION LOGIC (BR 29, BR 31)
@@ -175,3 +183,6 @@ describe('LeavesService', () => {
     jest.clearAllMocks();
   });
 });
+=======
+});
+>>>>>>> Stashed changes

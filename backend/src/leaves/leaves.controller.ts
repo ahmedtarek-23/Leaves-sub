@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { 
     Controller, 
     Get, 
@@ -171,3 +172,9 @@ async encashLeave(
 
 
 }
+=======
+import { Controller } from '@nestjs/common';
+
+@Controller('leaves')
+export class LeavesController {}
+>>>>>>> Stashed changes

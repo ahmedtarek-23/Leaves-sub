@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TimeManagementModule } from './time-management/time-management.module';
@@ -11,10 +13,28 @@ import { OrganizationStructureModule } from './organization-structure/organizati
 import { PerformanceModule } from './performance/performance.module';
 import { PayrollConfigurationModule } from './payroll-configuration/payroll-configuration.module';
 import { PayrollExecutionModule } from './payroll-execution/payroll-execution.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
+import { OffboardingModule } from './offboarding/offboarding.module';
 
 @Module({
+<<<<<<< Updated upstream
   imports: [TimeManagementModule, RecruitmentModule, LeavesModule, PayrollExecutionModule, PayrollConfigurationModule, PayrollTrackingModule, EmployeeProfileModule, OrganizationStructureModule, PerformanceModule],
+=======
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/hr-system'),
+    TimeManagementModule, 
+    RecruitmentModule, 
+    LeavesModule, 
+    PayrollExecutionModule, 
+    PayrollConfigurationModule, 
+    PayrollTrackingModule, 
+    EmployeeProfileModule, 
+    OrganizationStructureModule, 
+    PerformanceModule,
+  ],
+>>>>>>> Stashed changes
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

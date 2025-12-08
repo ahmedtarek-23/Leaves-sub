@@ -16,17 +16,36 @@ export class disputes {
     @Prop({ required: true })
     description: string;
 
+<<<<<<< Updated upstream
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
     employeeId: mongoose.Types.ObjectId;
+=======
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
+  employeeId: mongoose.Types.ObjectId;
+>>>>>>> Stashed changes
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
     financeStaffId?: mongoose.Types.ObjectId;
 
+<<<<<<< Updated upstream
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'paySlip', required: true })
     payslipId: mongoose.Types.ObjectId;
 
     @Prop({ required: true, type: String, enum: DisputeStatus, default: DisputeStatus.UNDER_REVIEW })
     status: DisputeStatus;// under review, approved, rejected
+=======
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollSpecialistId?: mongoose.Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollManagerId?: mongoose.Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'paySlip', required: true })
+  payslipId: mongoose.Types.ObjectId;
+
+  @Prop({ required: true, type: String, enum: DisputeStatus, default: DisputeStatus.UNDER_REVIEW })
+  status: DisputeStatus;// under review,pending_manager_approval, approved, rejected
+>>>>>>> Stashed changes
 
     @Prop()
     rejectionReason?: string;

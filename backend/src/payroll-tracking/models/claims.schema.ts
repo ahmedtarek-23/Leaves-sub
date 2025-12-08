@@ -13,23 +13,47 @@ export class claims {
     @Prop({ required: true })
     description: string;
 
+<<<<<<< Updated upstream
     @Prop({ required: true })
     claimType: string // for example: medical, etc
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
     employeeId: mongoose.Types.ObjectId;
+=======
+  @Prop({ required: true })
+  claimType: string // for example: medical, etc
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
+  employeeId: mongoose.Types.ObjectId;
+>>>>>>> Stashed changes
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
     financeStaffId?: mongoose.Types.ObjectId;
 
+<<<<<<< Updated upstream
     @Prop({ required: true })
     amount: number;
+=======
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollSpecialistId?: mongoose.Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollManagerId?: mongoose.Types.ObjectId;
+
+  @Prop({ required: true })
+  amount: number;
+>>>>>>> Stashed changes
 
     @Prop({})
     approvedAmount?: number;
 
+<<<<<<< Updated upstream
     @Prop({ required: true, type: String, enum: ClaimStatus, default: ClaimStatus.UNDER_REVIEW })
     status: ClaimStatus;// under review, approved, rejected
+=======
+  @Prop({ required: true, type: String, enum: ClaimStatus, default: ClaimStatus.UNDER_REVIEW })
+  status: ClaimStatus;// under review,pending_manager_approval, approved, rejected
+>>>>>>> Stashed changes
 
     @Prop()
     rejectionReason?: string;
@@ -37,6 +61,12 @@ export class claims {
     @Prop()
     resolutionComment?: string;
 
+<<<<<<< Updated upstream
+=======
+  @Prop()
+  resolutionComment?: string;
+
+>>>>>>> Stashed changes
 }
 
 export const claimsSchema = SchemaFactory.createForClass(claims);

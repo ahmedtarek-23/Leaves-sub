@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 export enum LeaveStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
@@ -7,3 +8,11 @@ export enum LeaveStatus {
   ENCASHED = 'ENCASHED', 
   
 }
+=======
+export enum LeaveStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
+}
+>>>>>>> Stashed changes

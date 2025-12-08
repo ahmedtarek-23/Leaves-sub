@@ -15,6 +15,13 @@ export class EmployeeTerminationResignation {
     employeeId: mongoose.Types.ObjectId;
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: terminationAndResignationBenefits.name, required: true })
     benefitId: mongoose.Types.ObjectId;
+<<<<<<< Updated upstream
+=======
+
+    @Prop({required: true})
+    givenAmount:number; // for sake of editing Benefits amount manually given to this employee
+    
+>>>>>>> Stashed changes
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: TerminationRequest.name, required: true })
     terminationId: mongoose.Types.ObjectId;
     @Prop({ default: BenefitStatus.PENDING, type: String, enum: BenefitStatus })
