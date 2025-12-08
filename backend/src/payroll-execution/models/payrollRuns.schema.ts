@@ -34,7 +34,11 @@ export class payrollRuns {
   paymentStatus: PayRollPaymentStatus;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+=======
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+>>>>>>> Stashed changes
 =======
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
 >>>>>>> Stashed changes

@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -922,6 +923,12 @@ async applyCarryForward(): Promise<void> {
     };
 }
 }
+=======
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class LeavesService {}
+>>>>>>> Stashed changes
 =======
 import { Injectable } from '@nestjs/common';
 

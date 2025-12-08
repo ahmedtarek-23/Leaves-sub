@@ -11,8 +11,13 @@ export class insuranceBrackets {
   @Prop({ required: true, unique: true })
   name: string; // insurance name like: social, health insurance
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   @Prop({ required: true, min: 0 })
   amount: number;
+=======
+  // @Prop({ required: true, min: 0 })
+  // amount: number;
+>>>>>>> Stashed changes
 =======
   // @Prop({ required: true, min: 0 })
   // amount: number;

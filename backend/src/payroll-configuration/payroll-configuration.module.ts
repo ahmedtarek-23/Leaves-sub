@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { PayrollConfigurationController } from './payroll-configuration.controller';
 import { PayrollConfigurationService } from './payroll-configuration.service';
 import { CompanyWideSettings, CompanyWideSettingsSchema } from './models/CompanyWideSettings.schema';
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 import { MongooseModule } from '@nestjs/mongoose';
@@ -14,6 +17,7 @@ import { AuthModule } from '../auth/auth.module'; // Import AuthModule
 // Import All Schemas
 import { allowance, allowanceSchema } from './models/allowance.schema';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { insuranceBrackets, insuranceBracketsSchema } from './models/insuranceBrackets.schema';
 import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies.schema';
 import { payType, payTypeSchema } from './models/payType.schema';
@@ -23,6 +27,9 @@ import { terminationAndResignationBenefits, terminationAndResignationBenefitsSch
 import { payGrade } from './models/payGrades.schema';
 =======
 import { taxRules, taxRulesSchema } from './models/taxRules.schema';
+=======
+import { taxRules, taxRulesSchema } from './models/taxRules.schema';
+>>>>>>> Stashed changes
 import { insuranceBrackets, insuranceBracketsSchema } from './models/insuranceBrackets.schema';
 import { signingBonus, signingBonusSchema } from './models/signingBonus.schema';
 import { CompanyWideSettings, CompanyWideSettingsSchema } from './models/CompanyWideSettings.schema';
@@ -30,6 +37,9 @@ import { payGrade, payGradeSchema } from './models/payGrades.schema';
 import { payType, payTypeSchema } from './models/payType.schema';
 import { terminationAndResignationBenefits, terminationAndResignationBenefitsSchema } from './models/terminationAndResignationBenefits';
 import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies.schema';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 @Module({
@@ -39,6 +49,7 @@ import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies
       { name: taxRules.name, schema: taxRulesSchema },
       { name: insuranceBrackets.name, schema: insuranceBracketsSchema },
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       { name: payType.name, schema: payTypeSchema },
       { name: payrollPolicies.name, schema: payrollPoliciesSchema },
       { name: terminationAndResignationBenefits.name, schema: terminationAndResignationBenefitsSchema },
@@ -47,10 +58,17 @@ import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies
 =======
       { name: signingBonus.name, schema: signingBonusSchema },
       { name: CompanyWideSettings.name, schema: CompanyWideSettingsSchema },
+=======
+      { name: signingBonus.name, schema: signingBonusSchema },
+      { name: CompanyWideSettings.name, schema: CompanyWideSettingsSchema },
+>>>>>>> Stashed changes
       { name: payGrade.name, schema: payGradeSchema },
       { name: payType.name, schema: payTypeSchema },
       { name: terminationAndResignationBenefits.name, schema: terminationAndResignationBenefitsSchema },
       { name: payrollPolicies.name, schema: payrollPoliciesSchema },
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     ]),
     AuthModule,
@@ -60,7 +78,11 @@ import { payrollPolicies, payrollPoliciesSchema } from './models/payrollPolicies
   exports:[PayrollConfigurationService]
 })
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 export class PayrollConfigurationModule { }
+=======
+export class PayrollConfigurationModule {}
+>>>>>>> Stashed changes
 =======
 export class PayrollConfigurationModule {}
 >>>>>>> Stashed changes

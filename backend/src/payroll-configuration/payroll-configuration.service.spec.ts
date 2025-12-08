@@ -142,7 +142,10 @@ describe('PayrollConfigurationService', () => {
 
     service = module.get<PayrollConfigurationService>(PayrollConfigurationService);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
     allowanceModel = module.get<Model<any>>(getModelToken('allowance'));
     taxRulesModel = module.get<Model<any>>(getModelToken('taxRules'));
     insuranceModel = module.get<Model<any>>(getModelToken('insuranceBrackets'));
@@ -153,6 +156,9 @@ describe('PayrollConfigurationService', () => {
     payrollPoliciesModel = module.get<Model<any>>(getModelToken('payrollPolicies'));
     termModel = module.get<Model<any>>(getModelToken('terminationAndResignationBenefits'));
     orgService = module.get<OrganizationStructureService>(OrganizationStructureService);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
   });
 

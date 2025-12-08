@@ -15,6 +15,10 @@ import { Document,DocumentSchema } from './models/document.schema';
 import { TerminationRequest,TerminationRequestSchema } from './models/termination-request.schema';
 import { ClearanceChecklist,ClearanceChecklistSchema } from './models/clearance-checklist.schema';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+import { OnboardingModule } from '../onboarding/onboarding.module';
+>>>>>>> Stashed changes
 =======
 import { OnboardingModule } from '../onboarding/onboarding.module';
 >>>>>>> Stashed changes
@@ -34,7 +38,12 @@ import { EmployeeProfileModule } from '../employee-profile/employee-profile.modu
       { name: TerminationRequest.name, schema: TerminationRequestSchema },
       { name: ClearanceChecklist.name, schema: ClearanceChecklistSchema },
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     ]),EmployeeProfileModule
+=======
+    ]),EmployeeProfileModule,
+    OnboardingModule,
+>>>>>>> Stashed changes
 =======
     ]),EmployeeProfileModule,
     OnboardingModule,

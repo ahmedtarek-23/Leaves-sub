@@ -27,5 +27,8 @@ export enum DisputeStatus {
 export enum RefundStatus {
   PENDING = 'pending',
   PAID = 'paid' // when payroll execution
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 }

@@ -94,6 +94,10 @@ describe('PayrollConfigurationController', () => {
 
     controller = module.get<PayrollConfigurationController>(PayrollConfigurationController);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    service = module.get<PayrollConfigurationService>(PayrollConfigurationService);
+>>>>>>> Stashed changes
 =======
     service = module.get<PayrollConfigurationService>(PayrollConfigurationService);
 >>>>>>> Stashed changes

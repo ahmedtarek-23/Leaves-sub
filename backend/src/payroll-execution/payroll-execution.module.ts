@@ -3,11 +3,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PayrollExecutionController } from './payroll-execution.controller';
 import { PayrollExecutionService } from './payroll-execution.service';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import { terminationAndResignationBenefits, terminationAndResignationBenefitsSchema } from '../payroll-configuration/models/terminationAndResignationBenefits';
 import { employeePayrollDetails, employeePayrollDetailsSchema } from './models/employeePayrollDetails.schema';
 import { employeePenalties, employeePenaltiesSchema } from './models/employeePenalties.schema';
 import { employeeSigningBonus, employeeSigningBonusSchema } from './models/EmployeeSigningBonus.schema';
 import { payrollRuns, payrollRunsSchema } from './models/payrollRuns.schema';
+=======
+import { PayrollCalculationService } from './payroll-calculation.service';
+
+// Import schemas
+>>>>>>> Stashed changes
 =======
 import { PayrollCalculationService } from './payroll-calculation.service';
 
@@ -51,5 +57,9 @@ export class PayrollExecutionModule { }
   controllers: [PayrollExecutionController],
   providers: [PayrollExecutionService, PayrollCalculationService],
 })
+<<<<<<< Updated upstream
+export class PayrollExecutionModule {}
+>>>>>>> Stashed changes
+=======
 export class PayrollExecutionModule {}
 >>>>>>> Stashed changes

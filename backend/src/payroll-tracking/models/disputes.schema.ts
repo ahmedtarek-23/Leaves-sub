@@ -17,9 +17,12 @@ export class disputes {
     description: string;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
     employeeId: mongoose.Types.ObjectId;
 =======
+=======
+>>>>>>> Stashed changes
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
   employeeId: mongoose.Types.ObjectId;
 >>>>>>> Stashed changes
@@ -40,11 +43,23 @@ export class disputes {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
   payrollManagerId?: mongoose.Types.ObjectId;
 
+<<<<<<< Updated upstream
+=======
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollSpecialistId?: mongoose.Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollManagerId?: mongoose.Types.ObjectId;
+
+>>>>>>> Stashed changes
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'paySlip', required: true })
   payslipId: mongoose.Types.ObjectId;
 
   @Prop({ required: true, type: String, enum: DisputeStatus, default: DisputeStatus.UNDER_REVIEW })
   status: DisputeStatus;// under review,pending_manager_approval, approved, rejected
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
     @Prop()
