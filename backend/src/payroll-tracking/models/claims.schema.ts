@@ -7,35 +7,41 @@ export type claimsDocument = HydratedDocument<claims>
 
 @Schema({ timestamps: true })
 export class claims {
-    @Prop({ required: true, unique: true })
-    claimId: string; // for frontend view purposes ex: CLAIM-0001
+  @Prop({ required: true, unique: true })
+  claimId: string; // for frontend view purposes ex: CLAIM-0001
 
-    @Prop({ required: true })
-    description: string;
+  @Prop({ required: true })
+  description: string;
 
-    @Prop({ required: true })
-    claimType: string // for example: medical, etc
+  @Prop({ required: true })
+  claimType: string // for example: medical, etc
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
-    employeeId: mongoose.Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
+  employeeId: mongoose.Types.ObjectId;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-    financeStaffId?: mongoose.Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  financeStaffId?: mongoose.Types.ObjectId;
 
-    @Prop({ required: true })
-    amount: number;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollSpecialistId?: mongoose.Types.ObjectId;
 
-    @Prop({})
-    approvedAmount?: number;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
+  payrollManagerId?: mongoose.Types.ObjectId;
 
-    @Prop({ required: true, type: String, enum: ClaimStatus, default: ClaimStatus.UNDER_REVIEW })
-    status: ClaimStatus;// under review, approved, rejected
+  @Prop({ required: true })
+  amount: number;
 
-    @Prop()
-    rejectionReason?: string;
+  @Prop({})
+  approvedAmount?: number;
 
-    @Prop()
-    resolutionComment?: string;
+  @Prop({ required: true, type: String, enum: ClaimStatus, default: ClaimStatus.UNDER_REVIEW })
+  status: ClaimStatus;// under review,pending_manager_approval, approved, rejected
+
+  @Prop()
+  rejectionReason?: string;
+
+  @Prop()
+  resolutionComment?: string;
 
 }
 
