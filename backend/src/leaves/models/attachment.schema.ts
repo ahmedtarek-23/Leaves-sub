@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type AttachmentDocument = HydratedDocument<Attachment>;
 
@@ -16,6 +16,18 @@ export class Attachment {
 
   @Prop()
   size?: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'LeaveRequest' })
+  leaveRequestId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Employee' })
+  uploadedBy?: Types.ObjectId;
+
+  @Prop()
+  uploadedAt?: Date;
+
+  @Prop()
+  documentType?: string;
 }
 
 export const AttachmentSchema = SchemaFactory.createForClass(Attachment);
