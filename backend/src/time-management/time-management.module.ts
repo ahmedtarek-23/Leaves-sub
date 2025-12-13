@@ -30,6 +30,7 @@ import { HolidaySchema, Holiday } from './models/holiday.schema';
     { name: Holiday.name, schema: HolidaySchema },
   ])],
   controllers: [TimeManagementController],
-  providers: [TimeManagementService]
+  providers: [TimeManagementService],
+  exports: [TimeManagementService]
 })
 export class TimeManagementModule {}

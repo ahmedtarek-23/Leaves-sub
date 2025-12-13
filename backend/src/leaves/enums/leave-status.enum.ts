@@ -1,27 +1,8 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 export enum LeaveStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
   CANCELLED = 'cancelled',
-  ESCALATED = 'ESCALATED',
-  ENCASHED = 'ENCASHED', 
-  
+  ESCALATED = 'escalated',
+  ENCASHED = 'encashed',
 }
-=======
-export enum LeaveStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-}
->>>>>>> Stashed changes
-=======
-export enum LeaveStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
-}
->>>>>>> Stashed changes

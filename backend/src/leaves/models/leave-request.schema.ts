@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 // schemas/leave-request.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
@@ -19,13 +17,6 @@ export class LeaveRequest {
     type: { from: Date, to: Date },
     required: true,
   })
-
-  @Prop({ required: true })
-  startDate: Date;
-
-  @Prop({ required: true })
-  endDate: Date;
-
   dates: { from: Date; to: Date };
 
   @Prop({ required: true })
@@ -62,12 +53,13 @@ export class LeaveRequest {
   syncedAt?: Date;
 
   @Prop({
+    type: String,
     enum: LeaveStatus,
     default: LeaveStatus.PENDING,
   })
   status: LeaveStatus;
 
-   @Prop({ default: false })
+  @Prop({ default: false })
   requiresHRConversion: boolean;
 
   @Prop({ default: false })
@@ -121,142 +113,12 @@ export class LeaveRequest {
   @Prop({ default: false })
   isEscalated?: boolean;
 
-@Prop()
+  @Prop()
   escalatedAt?: Date;
 
-@Prop({ type: Date, default: Date.now })
-  createdAt: Date;
-
-@Prop({ type: Date, default: Date.now })
-  updatedAt: Date;
-
-@Prop()
+  @Prop()
   rejectionReason?: string;
 }
 
 export const LeaveRequestSchema =
   SchemaFactory.createForClass(LeaveRequest);
-=======
-// schemas/leave-request.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
-import { LeaveStatus } from '../enums/leave-status.enum';
-
-export type LeaveRequestDocument = HydratedDocument<LeaveRequest>;
-
-@Schema({ timestamps: true })
-export class LeaveRequest {
-  @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
-  employeeId: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
-  leaveTypeId: Types.ObjectId;
-
-  @Prop({
-    type: { from: Date, to: Date },
-    required: true,
-  })
-  dates: { from: Date; to: Date };
-
-  @Prop({ required: true })
-  durationDays: number;
-
-  @Prop()
-  justification?: string;
-
-  @Prop({ type: Types.ObjectId, ref: 'Attachment' })
-  attachmentId?: Types.ObjectId;
-
-  @Prop({
-    type: [
-      {
-        role: String,
-        status: String,
-        decidedBy: { type: Types.ObjectId, ref: 'Employee' },
-        decidedAt: Date,
-      },
-    ],
-    default: [],
-  })
-  approvalFlow: {
-    role: string;
-    status: string;
-    decidedBy?: Types.ObjectId;
-    decidedAt?: Date;
-  }[];
-
-  @Prop({
-    enum: LeaveStatus,
-    default: LeaveStatus.PENDING,
-  })
-  status: LeaveStatus;
-
-  @Prop({ default: false })
-  irregularPatternFlag: boolean;
-}
-
-export const LeaveRequestSchema =
-  SchemaFactory.createForClass(LeaveRequest);
->>>>>>> Stashed changes
-=======
-// schemas/leave-request.schema.ts
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
-import { LeaveStatus } from '../enums/leave-status.enum';
-
-export type LeaveRequestDocument = HydratedDocument<LeaveRequest>;
-
-@Schema({ timestamps: true })
-export class LeaveRequest {
-  @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
-  employeeId: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
-  leaveTypeId: Types.ObjectId;
-
-  @Prop({
-    type: { from: Date, to: Date },
-    required: true,
-  })
-  dates: { from: Date; to: Date };
-
-  @Prop({ required: true })
-  durationDays: number;
-
-  @Prop()
-  justification?: string;
-
-  @Prop({ type: Types.ObjectId, ref: 'Attachment' })
-  attachmentId?: Types.ObjectId;
-
-  @Prop({
-    type: [
-      {
-        role: String,
-        status: String,
-        decidedBy: { type: Types.ObjectId, ref: 'Employee' },
-        decidedAt: Date,
-      },
-    ],
-    default: [],
-  })
-  approvalFlow: {
-    role: string;
-    status: string;
-    decidedBy?: Types.ObjectId;
-    decidedAt?: Date;
-  }[];
-
-  @Prop({
-    enum: LeaveStatus,
-    default: LeaveStatus.PENDING,
-  })
-  status: LeaveStatus;
-
-  @Prop({ default: false })
-  irregularPatternFlag: boolean;
-}
-
-export const LeaveRequestSchema =
-  SchemaFactory.createForClass(LeaveRequest);
->>>>>>> Stashed changes
