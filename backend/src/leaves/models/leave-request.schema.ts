@@ -53,6 +53,7 @@ export class LeaveRequest {
   syncedAt?: Date;
 
   @Prop({
+    type: String,
     enum: LeaveStatus,
     default: LeaveStatus.PENDING,
   })
