@@ -1346,7 +1346,7 @@ export class LeavesService {
             dates: req.dates,
             duration: req.durationDays,
             status: req.status,
-            createdAt: req.createdAt,
+            createdAt: (req as any).createdAt,
             approvalFlow: req.approvalFlow,
         }));
     }
@@ -1373,7 +1373,7 @@ export class LeavesService {
             amount: adj.amount,
             reason: adj.reason,
             hrUser: adj.hrUserId,
-            createdAt: adj.createdAt,
+            createdAt: (adj as any).createdAt,
         }));
     }
 
