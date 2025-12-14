@@ -30,6 +30,7 @@ import { TimeManagementService } from '../time-management/time-management.servic
 import { EmployeeProfileService } from '../employee-profile/employee-profile.service';
 import { PayrollExecutionService } from '../payroll-execution/payroll-execution.service';
 import { NotificationService } from './notifications/notification.service';
+import { EmployeeProfile } from '../employee-profile/models/employee-profile.schema';
 
 describe('LeavesService E2E Tests', () => {
     let service: LeavesService;
@@ -63,6 +64,7 @@ describe('LeavesService E2E Tests', () => {
         const mockLeaveCategoryModel = createMockModel();
         const mockCalendarModel = createMockModel();
         const mockAttachmentModel = createMockModel();
+        const mockEmployeeProfileModel = createMockModel();
 
         // Create mock services
         const mockTimeManagementService = {
@@ -99,6 +101,7 @@ describe('LeavesService E2E Tests', () => {
                 { provide: getModelToken(LeaveCategory.name), useValue: mockLeaveCategoryModel },
                 { provide: getModelToken(Calendar.name), useValue: mockCalendarModel },
                 { provide: getModelToken(Attachment.name), useValue: mockAttachmentModel },
+                { provide: getModelToken(EmployeeProfile.name), useValue: mockEmployeeProfileModel },
                 { provide: TimeManagementService, useValue: mockTimeManagementService },
                 { provide: EmployeeProfileService, useValue: mockEmployeeProfileService },
                 { provide: PayrollExecutionService, useValue: mockPayrollExecutionService },

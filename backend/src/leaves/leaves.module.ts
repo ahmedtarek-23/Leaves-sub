@@ -14,6 +14,7 @@ import { EmployeeProfileModule } from '../employee-profile/employee-profile.modu
 import { TimeManagementModule } from '../time-management/time-management.module';
 import { PayrollExecutionModule } from '../payroll-execution/payroll-execution.module';
 import { NotificationService } from './notifications/notification.service';
+import { EmployeeProfile, EmployeeProfileSchema } from '../employee-profile/models/employee-profile.schema';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { NotificationService } from './notifications/notification.service';
             { name: LeaveAdjustment.name, schema: LeaveAdjustmentSchema },
             { name: Calendar.name, schema: CalendarSchema },
             { name: Attachment.name, schema: AttachmentSchema },
+            { name: EmployeeProfile.name, schema: EmployeeProfileSchema },
         ]),
         EmployeeProfileModule,
         TimeManagementModule,

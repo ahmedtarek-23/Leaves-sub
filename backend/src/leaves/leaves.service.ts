@@ -25,6 +25,7 @@ import { RoundingRule } from './enums/rounding-rule.enum';
 import { TimeManagementService } from '../time-management/time-management.service';
 import { EmployeeProfileService } from '../employee-profile/employee-profile.service';
 import { PayrollExecutionService } from '../payroll-execution/payroll-execution.service';
+import { ITimeManagementService, IPayrollExecutionService, IEmployeeProfileService } from './interfaces/external-services.interface';
 
 @Injectable()
 export class LeavesService {
@@ -42,9 +43,9 @@ export class LeavesService {
         @InjectModel(Attachment.name) private attachmentModel: Model<Attachment>,
 
         // Inject dependent services
-        private readonly timeManagementService: TimeManagementService,
-        private readonly employeeProfileService: EmployeeProfileService,
-        private readonly payrollExecutionService: PayrollExecutionService,
+        private readonly timeManagementService: TimeManagementService & ITimeManagementService,
+        private readonly employeeProfileService: EmployeeProfileService & IEmployeeProfileService,
+        private readonly payrollExecutionService: PayrollExecutionService & IPayrollExecutionService,
         private readonly notificationService: NotificationService,
     ) {}
 
@@ -279,8 +280,8 @@ export class LeavesService {
                 // Get team members (simplified - would need proper implementation)
                 const teamMembers = await this.getTeamMembers(managerId.toString());
                 const teamMemberIds = teamMembers
-                    .map((member: any) => member._id)
-                    .filter((id: any) => id.toString() !== employeeId);
+                    .map((member) => member._id)
+                    .filter((id) => id && id.toString() !== employeeId);
 
                 if (teamMemberIds.length > 0) {
                     const conflictingLeaves = await this.leaveRequestModel.find({
@@ -648,8 +649,8 @@ export class LeavesService {
                     leaveTypeId: request.leaveTypeId,
                 }).exec();
 
-                if (this.payrollExecutionService && typeof (this.payrollExecutionService as any).applyLeaveAdjustment === 'function') {
-                    await (this.payrollExecutionService as any).applyLeaveAdjustment({
+                if (this.payrollExecutionService?.applyLeaveAdjustment) {
+                    await this.payrollExecutionService.applyLeaveAdjustment({
                         employeeId: request.employeeId.toString(),
                         leaveRequestId: request._id.toString(),
                         leaveType: await this.getLeaveTypeName(request.leaveTypeId),
@@ -665,8 +666,8 @@ export class LeavesService {
 
             // 3. Time Management Sync (REQ-042)
             try {
-                if (this.timeManagementService && typeof (this.timeManagementService as any).blockLeavePeriod === 'function') {
-                    await (this.timeManagementService as any).blockLeavePeriod({
+                if (this.timeManagementService?.blockLeavePeriod) {
+                    await this.timeManagementService.blockLeavePeriod({
                         employeeId: request.employeeId.toString(),
                         leaveRequestId: request._id.toString(),
                         startDate: request.dates.from,
@@ -749,7 +750,8 @@ export class LeavesService {
                     status: 'SUCCESS',
                     result,
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                 results.push({
                     requestId,
                     status: 'FAILED',
@@ -891,8 +893,10 @@ export class LeavesService {
             return false;
         }
 
-        const category = leaveType.categoryId as any;
-        const categoryName = category?.name?.toLowerCase() || '';
+        const category = leaveType.categoryId;
+        const categoryName = (category && typeof category === 'object' && 'name' in category) 
+            ? (category as { name?: string }).name?.toLowerCase() || ''
+            : '';
         const leaveTypeName = leaveType.name?.toLowerCase() || '';
 
         return (
@@ -1232,8 +1236,8 @@ export class LeavesService {
         await entitlement.save();
 
         try {
-            if (this.payrollExecutionService && typeof (this.payrollExecutionService as any).processFinalPayment === 'function') {
-                await (this.payrollExecutionService as any).processFinalPayment({
+            if (this.payrollExecutionService?.processFinalPayment) {
+                await this.payrollExecutionService.processFinalPayment({
                     employeeId: request.employeeId.toString(),
                     encashmentAmount,
                 });
@@ -1346,7 +1350,7 @@ export class LeavesService {
             dates: req.dates,
             duration: req.durationDays,
             status: req.status,
-            createdAt: (req as any).createdAt,
+            createdAt: req.createdAt || new Date(),
             approvalFlow: req.approvalFlow,
         }));
     }
@@ -1373,7 +1377,7 @@ export class LeavesService {
             amount: adj.amount,
             reason: adj.reason,
             hrUser: adj.hrUserId,
-            createdAt: (adj as any).createdAt,
+            createdAt: adj.createdAt || new Date(),
         }));
     }
 
@@ -1448,7 +1452,9 @@ export class LeavesService {
             if (req.status === LeaveStatus.REJECTED) stats.rejectedCount++;
 
             // Leave type counts
-            const leaveTypeName = (req.leaveTypeId as any)?.name || 'Unknown';
+            const leaveTypeName = (req.leaveTypeId && typeof req.leaveTypeId === 'object' && 'name' in req.leaveTypeId)
+                ? (req.leaveTypeId as { name?: string }).name || 'Unknown'
+                : 'Unknown';
             stats.byLeaveType[leaveTypeName] = (stats.byLeaveType[leaveTypeName] || 0) + 1;
 
             // Total days
