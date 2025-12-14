@@ -1628,5 +1628,5 @@ async applyCarryForward(): Promise<void> {
             .find(query)
             .sort({ accrualDate: -1 })
             .exec();
-    }
+}
 }
