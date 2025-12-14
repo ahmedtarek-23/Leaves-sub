@@ -35,24 +35,27 @@ describe('NotificationService', () => {
 
   describe('sendNotification (REQ-019, REQ-024, REQ-030)', () => {
     it('should create and send email notification', async () => {
-      const mockNotification = {
+      const mockNotificationBase = {
         _id: new Types.ObjectId(),
         recipientId: mockEmployeeId,
         type: NotificationType.REQUEST_SUBMITTED,
         channel: NotificationChannel.EMAIL,
         status: NotificationStatus.PENDING,
+      };
+      const mockNotification = {
+        ...mockNotificationBase,
         save: jest.fn()
           .mockResolvedValueOnce({
-            ...mockNotification,
+            ...mockNotificationBase,
             status: NotificationStatus.PENDING,
           })
           .mockResolvedValueOnce({
-            ...mockNotification,
+            ...mockNotificationBase,
             status: NotificationStatus.SENT,
             sentAt: new Date(),
           })
           .mockResolvedValueOnce({
-            ...mockNotification,
+            ...mockNotificationBase,
             status: NotificationStatus.DELIVERED,
             deliveredAt: new Date(),
           }),
@@ -75,16 +78,19 @@ describe('NotificationService', () => {
     });
 
     it('should create and send SMS notification', async () => {
-      const mockNotification = {
+      const mockNotificationBase = {
         _id: new Types.ObjectId(),
         recipientId: mockEmployeeId,
         type: NotificationType.REQUEST_APPROVED,
         channel: NotificationChannel.SMS,
         status: NotificationStatus.PENDING,
+      };
+      const mockNotification = {
+        ...mockNotificationBase,
         save: jest.fn()
-          .mockResolvedValueOnce({ ...mockNotification, status: NotificationStatus.PENDING })
-          .mockResolvedValueOnce({ ...mockNotification, status: NotificationStatus.SENT, sentAt: new Date() })
-          .mockResolvedValueOnce({ ...mockNotification, status: NotificationStatus.DELIVERED, deliveredAt: new Date() }),
+          .mockResolvedValueOnce({ ...mockNotificationBase, status: NotificationStatus.PENDING })
+          .mockResolvedValueOnce({ ...mockNotificationBase, status: NotificationStatus.SENT, sentAt: new Date() })
+          .mockResolvedValueOnce({ ...mockNotificationBase, status: NotificationStatus.DELIVERED, deliveredAt: new Date() }),
       };
 
       notificationModel.mockImplementation(() => mockNotification);
@@ -104,13 +110,16 @@ describe('NotificationService', () => {
     });
 
     it('should handle notification failure gracefully', async () => {
-      const mockNotification = {
+      const mockNotificationBase = {
         _id: new Types.ObjectId(),
         recipientId: mockEmployeeId,
         status: NotificationStatus.PENDING,
+      };
+      const mockNotification = {
+        ...mockNotificationBase,
         save: jest.fn()
-          .mockResolvedValueOnce({ ...mockNotification, status: NotificationStatus.PENDING })
-          .mockResolvedValueOnce({ ...mockNotification, status: NotificationStatus.FAILED, errorMessage: 'Email service unavailable' }),
+          .mockResolvedValueOnce({ ...mockNotificationBase, status: NotificationStatus.PENDING })
+          .mockResolvedValueOnce({ ...mockNotificationBase, status: NotificationStatus.FAILED, errorMessage: 'Email service unavailable' }),
       };
 
       notificationModel.mockImplementation(() => mockNotification);

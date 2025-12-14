@@ -7,7 +7,7 @@ export type LeaveRequestDocument = Document & LeaveRequest;
 
 @Schema({ timestamps: true })
 export class LeaveRequest extends Document {
-  _id: Types.ObjectId;
+  declare _id: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
   employeeId: Types.ObjectId;
 
