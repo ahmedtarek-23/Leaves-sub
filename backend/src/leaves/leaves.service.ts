@@ -17,6 +17,12 @@ import { LeaveType } from './models/leave-type.schema';
 import { LeaveCategory } from './models/leave-category.schema';
 import { Calendar } from './models/calendar.schema';
 import { Attachment } from './models/attachment.schema';
+import { LeaveDelegation } from './models/leave-delegation.schema';
+import { LeaveAuditLog, AuditAction } from './models/leave-audit-log.schema';
+import { LeaveNotification } from './models/leave-notification.schema';
+import { LeaveAccrual } from './models/leave-accrual.schema';
+import { LeaveBalance } from './models/leave-balance.schema';
+import { ResetPolicy } from './models/reset-policy.schema';
 import { NotificationService } from './notifications/notification.service';
 
 // Import Enums
@@ -44,7 +50,12 @@ export class LeavesService {
         @InjectModel(LeaveAdjustment.name) private leaveAdjustmentModel: Model<LeaveAdjustment>,
         @InjectModel(Calendar.name) private calendarModel: Model<Calendar>,
         @InjectModel(Attachment.name) private attachmentModel: Model<Attachment>,
-        
+        @InjectModel(LeaveDelegation.name) private leaveDelegationModel: Model<LeaveDelegation>,
+        @InjectModel(LeaveAuditLog.name) private leaveAuditLogModel: Model<LeaveAuditLog>,
+        @InjectModel(LeaveNotification.name) private leaveNotificationModel: Model<LeaveNotification>,
+        @InjectModel(LeaveAccrual.name) private leaveAccrualModel: Model<LeaveAccrual>,
+        @InjectModel(LeaveBalance.name) private leaveBalanceModel: Model<LeaveBalance>,
+        @InjectModel(ResetPolicy.name) private resetPolicyModel: Model<ResetPolicy>,
         
         // 2. INJECT ALL DEPENDENT SERVICES
         private readonly timeManagementService: TimeManagementService,
@@ -81,10 +92,14 @@ export class LeavesService {
             await this.validateSickLeaveLimits(employeeId, roundedDuration);
         }
 
-        // 5. Check for team scheduling conflicts (BR 28)
+        // 5. Validate leave dates against blocked periods (REQ-010)
+        const year = new Date(requestData.startDate).getFullYear();
+        await this.validateLeaveDates(requestData.startDate, requestData.endDate, year);
+
+        // 6. Check for team scheduling conflicts (BR 28)
         await this.checkTeamSchedulingConflicts(employeeId, requestData.startDate, requestData.endDate);
 
-        // 6. Validation (BR 31) & Overlimit Handling (BR 29) - using ROUNDED duration
+        // 7. Validation (BR 31) & Overlimit Handling (BR 29) - using ROUNDED duration
         if (roundedDuration > entitlement.remaining) {
             if (entitlement.remaining > 0) {
                 requestData.status = LeaveStatus.PENDING; 
@@ -98,20 +113,25 @@ export class LeavesService {
             requestData.status = LeaveStatus.PENDING; // Normal approval flow (REQ-020)
         }
 
-        // 7. Set default values
+        // 8. Set default values
         requestData.createdAt = new Date();
         requestData.updatedAt = new Date();
         requestData.approvalFlow = [];
         requestData.isSynced = false;
 
-        // 8. Create and save the request
+        // 9. Create and save the request
         const newRequest = new this.leaveRequestModel(requestData);
         const savedRequest = await newRequest.save();
 
-        // 9. Send notification to manager (REQ-019)
-        await this.notificationService.sendLeaveRequestNotification(employeeId);
+        // 10. Send notification to manager (REQ-019)
+        if (requestData.managerId) {
+            await this.notificationService.notifyRequestSubmitted(
+                savedRequest,
+                requestData.managerId
+            );
+        }
 
-        // 10. Apply automatic flagging heuristics (REQ-039)
+        // 11. Apply automatic flagging heuristics (REQ-039)
         await this.applyFlaggingHeuristics(savedRequest);
 
         return savedRequest;
@@ -299,7 +319,27 @@ export class LeavesService {
         // Trigger Integration (REQ-042)
         if (newStatus === LeaveStatus.APPROVED) {
             await this.finalizeIntegration(updatedRequest);
+            // Send approval notification
+            await this.notificationService.notifyRequestApproved(
+                updatedRequest,
+                updatedRequest.employeeId
+            );
+        } else if (newStatus === LeaveStatus.REJECTED) {
+            // Send rejection notification
+            await this.notificationService.notifyRequestRejected(
+                updatedRequest,
+                updatedRequest.employeeId,
+                (reviewData as any).reason
+            );
         }
+
+        // Create audit log for review action
+        await this.createAuditLog({
+            leaveRequestId: updatedRequest._id as Types.ObjectId,
+            action: newStatus === LeaveStatus.APPROVED ? AuditAction.APPROVE : AuditAction.REJECT,
+            performedBy: new Types.ObjectId((reviewData as any).approverId),
+            reason: (reviewData as any).reason
+        });
 
         return updatedRequest;
     }
@@ -944,4 +984,649 @@ async applyCarryForward(): Promise<void> {
         encashmentAmount
     };
 }
+
+    // ============ LEAVE CALENDAR MANAGEMENT (REQ-010) ============
+
+    /**
+     * Add a holiday to the calendar
+     */
+    async addHoliday(year: number, holidayData: { name: string; date: Date; description?: string }): Promise<Calendar> {
+        let calendar = await this.calendarModel.findOne({ year }).exec();
+        
+        if (!calendar) {
+            calendar = new this.calendarModel({ year, holidays: [], blockedPeriods: [] });
+        }
+
+        // Check if holiday already exists
+        const existingHoliday = await this.calendarModel.findOne({
+            year,
+            'holidays': { $elemMatch: { date: holidayData.date } }
+        }).exec();
+
+        if (existingHoliday) {
+            throw new BadRequestException(`Holiday on ${holidayData.date} already exists for year ${year}`);
+        }
+
+        // In a real implementation, you'd have a separate Holiday model
+        // For now, we'll store it in the calendar's holidays array
+        calendar.holidays.push(holidayData.date as any);
+        await calendar.save();
+
+        return calendar;
+    }
+
+    /**
+     * Add a blocked period to the calendar
+     */
+    async addBlockedPeriod(year: number, blockedPeriodData: { from: Date; to: Date; reason: string }): Promise<Calendar> {
+        let calendar = await this.calendarModel.findOne({ year }).exec();
+        
+        if (!calendar) {
+            calendar = new this.calendarModel({ year, holidays: [], blockedPeriods: [] });
+        }
+
+        // Validate date range
+        if (blockedPeriodData.from >= blockedPeriodData.to) {
+            throw new BadRequestException('Start date must be before end date');
+        }
+
+        // Check for overlapping blocked periods
+        const overlapping = calendar.blockedPeriods.some(period => {
+            return (
+                (blockedPeriodData.from <= period.to && blockedPeriodData.to >= period.from)
+            );
+        });
+
+        if (overlapping) {
+            throw new BadRequestException('Blocked period overlaps with an existing blocked period');
+        }
+
+        calendar.blockedPeriods.push(blockedPeriodData);
+        await calendar.save();
+
+        return calendar;
+    }
+
+    /**
+     * Get calendar for a year
+     */
+    async getCalendar(year: number): Promise<Calendar | null> {
+        return this.calendarModel.findOne({ year }).exec();
+    }
+
+    /**
+     * Remove a holiday from the calendar
+     */
+    async removeHoliday(year: number, date: Date): Promise<Calendar> {
+        const calendar = await this.calendarModel.findOne({ year }).exec();
+        
+        if (!calendar) {
+            throw new NotFoundException(`Calendar for year ${year} not found`);
+        }
+
+        calendar.holidays = calendar.holidays.filter((h: any) => h.getTime() !== date.getTime());
+        await calendar.save();
+
+        return calendar;
+    }
+
+    /**
+     * Remove a blocked period from the calendar
+     */
+    async removeBlockedPeriod(year: number, from: Date, to: Date): Promise<Calendar> {
+        const calendar = await this.calendarModel.findOne({ year }).exec();
+        
+        if (!calendar) {
+            throw new NotFoundException(`Calendar for year ${year} not found`);
+        }
+
+        calendar.blockedPeriods = calendar.blockedPeriods.filter(
+            period => period.from.getTime() !== from.getTime() || period.to.getTime() !== to.getTime()
+        );
+        await calendar.save();
+
+        return calendar;
+    }
+
+    /**
+     * Validate if leave dates fall on blocked periods
+     */
+    async validateLeaveDates(startDate: Date, endDate: Date, year: number): Promise<void> {
+        const calendar = await this.calendarModel.findOne({ year }).exec();
+        
+        if (!calendar) {
+            return; // No calendar restrictions
+        }
+
+        const isBlocked = calendar.blockedPeriods.some(period => {
+            return (
+                (startDate <= period.to && endDate >= period.from)
+            );
+        });
+
+        if (isBlocked) {
+            throw new BadRequestException('Leave request falls on a blocked period');
+        }
+    }
+
+    // ============ LEAVE TYPE & CATEGORY MANAGEMENT (REQ-011) ============
+
+    /**
+     * Create a leave category
+     */
+    async createLeaveCategory(categoryData: { name: string; description?: string }): Promise<LeaveCategory> {
+        const existing = await this.leaveCategoryModel.findOne({ name: categoryData.name }).exec();
+        
+        if (existing) {
+            throw new BadRequestException(`Leave category with name "${categoryData.name}" already exists`);
+        }
+
+        const category = new this.leaveCategoryModel(categoryData);
+        return category.save();
+    }
+
+    /**
+     * Get all leave categories
+     */
+    async getLeaveCategories(): Promise<LeaveCategory[]> {
+        return this.leaveCategoryModel.find().exec();
+    }
+
+    /**
+     * Update a leave category
+     */
+    async updateLeaveCategory(categoryId: string, updateData: { name?: string; description?: string }): Promise<LeaveCategory> {
+        const category = await this.leaveCategoryModel.findById(categoryId).exec();
+        
+        if (!category) {
+            throw new NotFoundException(`Leave category ${categoryId} not found`);
+        }
+
+        if (updateData.name && updateData.name !== category.name) {
+            const existing = await this.leaveCategoryModel.findOne({ name: updateData.name }).exec();
+            if (existing) {
+                throw new BadRequestException(`Leave category with name "${updateData.name}" already exists`);
+            }
+        }
+
+        Object.assign(category, updateData);
+        return category.save();
+    }
+
+    /**
+     * Delete a leave category (with referential integrity check)
+     */
+    async deleteLeaveCategory(categoryId: string): Promise<void> {
+        const category = await this.leaveCategoryModel.findById(categoryId).exec();
+        
+        if (!category) {
+            throw new NotFoundException(`Leave category ${categoryId} not found`);
+        }
+
+        // Check if any leave types are using this category
+        const leaveTypesUsingCategory = await this.leaveTypeModel.countDocuments({
+            categoryId: new Types.ObjectId(categoryId)
+        }).exec();
+
+        if (leaveTypesUsingCategory > 0) {
+            throw new BadRequestException(
+                `Cannot delete category. ${leaveTypesUsingCategory} leave type(s) are using this category.`
+            );
+        }
+
+        await this.leaveCategoryModel.findByIdAndDelete(categoryId).exec();
+    }
+
+    /**
+     * Create a leave type
+     */
+    async createLeaveType(leaveTypeData: {
+        code: string;
+        name: string;
+        categoryId: string;
+        description?: string;
+        paid?: boolean;
+        deductible?: boolean;
+        requiresAttachment?: boolean;
+        minTenureMonths?: number;
+        maxDurationDays?: number;
+    }): Promise<LeaveType> {
+        // Check if category exists
+        const category = await this.leaveCategoryModel.findById(leaveTypeData.categoryId).exec();
+        if (!category) {
+            throw new NotFoundException(`Leave category ${leaveTypeData.categoryId} not found`);
+        }
+
+        // Check if code already exists
+        const existing = await this.leaveTypeModel.findOne({ code: leaveTypeData.code }).exec();
+        if (existing) {
+            throw new BadRequestException(`Leave type with code "${leaveTypeData.code}" already exists`);
+        }
+
+        const leaveType = new this.leaveTypeModel({
+            ...leaveTypeData,
+            categoryId: new Types.ObjectId(leaveTypeData.categoryId)
+        });
+        return leaveType.save();
+    }
+
+    /**
+     * Get all leave types
+     */
+    async getLeaveTypes(): Promise<LeaveType[]> {
+        return this.leaveTypeModel.find().populate('categoryId').exec();
+    }
+
+    /**
+     * Update a leave type
+     */
+    async updateLeaveType(leaveTypeId: string, updateData: Partial<LeaveType>): Promise<LeaveType> {
+        const leaveType = await this.leaveTypeModel.findById(leaveTypeId).exec();
+        
+        if (!leaveType) {
+            throw new NotFoundException(`Leave type ${leaveTypeId} not found`);
+        }
+
+        if (updateData.code && updateData.code !== leaveType.code) {
+            const existing = await this.leaveTypeModel.findOne({ code: updateData.code }).exec();
+            if (existing) {
+                throw new BadRequestException(`Leave type with code "${updateData.code}" already exists`);
+            }
+        }
+
+        Object.assign(leaveType, updateData);
+        return leaveType.save();
+    }
+
+    /**
+     * Delete a leave type (with referential integrity check)
+     */
+    async deleteLeaveType(leaveTypeId: string): Promise<void> {
+        const leaveType = await this.leaveTypeModel.findById(leaveTypeId).exec();
+        
+        if (!leaveType) {
+            throw new NotFoundException(`Leave type ${leaveTypeId} not found`);
+        }
+
+        // Check if any leave requests are using this type
+        const requestsUsingType = await this.leaveRequestModel.countDocuments({
+            leaveTypeId: new Types.ObjectId(leaveTypeId)
+        }).exec();
+
+        if (requestsUsingType > 0) {
+            throw new BadRequestException(
+                `Cannot delete leave type. ${requestsUsingType} leave request(s) are using this type.`
+            );
+        }
+
+        // Check if any policies are using this type
+        const policiesUsingType = await this.leavePolicyModel.countDocuments({
+            leaveTypeId: new Types.ObjectId(leaveTypeId)
+        }).exec();
+
+        if (policiesUsingType > 0) {
+            throw new BadRequestException(
+                `Cannot delete leave type. ${policiesUsingType} leave polic(ies) are using this type.`
+            );
+        }
+
+        await this.leaveTypeModel.findByIdAndDelete(leaveTypeId).exec();
+    }
+
+    // ============ RESET-DATE POLICY CONFIGURATION (REQ-012) ============
+
+    /**
+     * Create or update reset policy
+     */
+    async createResetPolicy(policyData: {
+        organizationId: string;
+        leaveTypeId: string;
+        resetType: 'YEARLY' | 'CUSTOM';
+        customResetDate?: Date;
+    }): Promise<ResetPolicy> {
+        // Check if policy already exists
+        const existing = await this.resetPolicyModel.findOne({
+            organizationId: new Types.ObjectId(policyData.organizationId),
+            leaveTypeId: new Types.ObjectId(policyData.leaveTypeId)
+        }).exec();
+
+        if (existing) {
+            // Update existing policy
+            existing.resetType = policyData.resetType as any;
+            existing.customResetDate = policyData.customResetDate;
+            existing.isActive = true;
+            
+            // Calculate next reset date
+            if (policyData.resetType === 'YEARLY') {
+                const now = new Date();
+                existing.nextResetDate = new Date(now.getFullYear() + 1, 0, 1);
+            } else if (policyData.customResetDate) {
+                const now = new Date();
+                const customDate = policyData.customResetDate;
+                existing.nextResetDate = new Date(now.getFullYear(), customDate.getMonth(), customDate.getDate());
+                if (existing.nextResetDate < now) {
+                    existing.nextResetDate.setFullYear(existing.nextResetDate.getFullYear() + 1);
+                }
+            }
+            
+            return existing.save();
+        }
+
+        // Create new policy
+        const now = new Date();
+        let nextResetDate: Date;
+
+        if (policyData.resetType === 'YEARLY') {
+            nextResetDate = new Date(now.getFullYear() + 1, 0, 1);
+        } else if (policyData.customResetDate) {
+            const customDate = policyData.customResetDate;
+            nextResetDate = new Date(now.getFullYear(), customDate.getMonth(), customDate.getDate());
+            if (nextResetDate < now) {
+                nextResetDate.setFullYear(nextResetDate.getFullYear() + 1);
+            }
+        } else {
+            throw new BadRequestException('Custom reset date is required for CUSTOM reset type');
+        }
+
+        const policy = new this.resetPolicyModel({
+            organizationId: new Types.ObjectId(policyData.organizationId),
+            leaveTypeId: new Types.ObjectId(policyData.leaveTypeId),
+            resetType: policyData.resetType,
+            customResetDate: policyData.customResetDate,
+            nextResetDate,
+            isActive: true
+        });
+
+        return policy.save();
+    }
+
+    /**
+     * Get reset policy for organization and leave type
+     */
+    async getResetPolicy(organizationId: string, leaveTypeId: string): Promise<ResetPolicy | null> {
+        return this.resetPolicyModel.findOne({
+            organizationId: new Types.ObjectId(organizationId),
+            leaveTypeId: new Types.ObjectId(leaveTypeId)
+        }).exec();
+    }
+
+    // ============ EDIT PENDING LEAVE REQUESTS (REQ-017) ============
+
+    /**
+     * Update a pending leave request with audit logging
+     */
+    async updatePendingLeaveRequest(
+        requestId: string,
+        updateData: {
+            startDate?: Date;
+            endDate?: Date;
+            durationDays?: number;
+            justification?: string;
+            leaveTypeId?: string;
+        },
+        updatedBy: Types.ObjectId
+    ): Promise<LeaveRequest> {
+        const request = await this.leaveRequestModel.findById(requestId).exec();
+        
+        if (!request) {
+            throw new NotFoundException(`Leave request ${requestId} not found`);
+        }
+
+        // Only allow updates for PENDING requests
+        if (request.status !== LeaveStatus.PENDING) {
+            throw new BadRequestException(
+                `Cannot update leave request. Only PENDING requests can be updated. Current status: ${request.status}`
+            );
+        }
+
+        // Store old values for audit
+        const oldValues = {
+            startDate: request.startDate,
+            endDate: request.endDate,
+            durationDays: request.durationDays,
+            justification: request.justification,
+            leaveTypeId: request.leaveTypeId.toString()
+        };
+
+        // Update request
+        if (updateData.startDate) request.startDate = updateData.startDate;
+        if (updateData.endDate) request.endDate = updateData.endDate;
+        if (updateData.durationDays) request.durationDays = updateData.durationDays;
+        if (updateData.justification !== undefined) request.justification = updateData.justification;
+        if (updateData.leaveTypeId) request.leaveTypeId = new Types.ObjectId(updateData.leaveTypeId);
+
+        // Recalculate duration if dates changed
+        if (updateData.startDate || updateData.endDate) {
+            const start = updateData.startDate || request.startDate;
+            const end = updateData.endDate || request.endDate;
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            request.durationDays = diffDays;
+        }
+
+        request.updatedAt = new Date();
+        await request.save();
+
+        // Create audit log
+        await this.createAuditLog({
+            leaveRequestId: request._id as Types.ObjectId,
+            action: AuditAction.UPDATE,
+            performedBy: updatedBy,
+            oldValues,
+            newValues: {
+                startDate: request.startDate,
+                endDate: request.endDate,
+                durationDays: request.durationDays,
+                justification: request.justification,
+                leaveTypeId: request.leaveTypeId.toString()
+            }
+        });
+
+        return request;
+    }
+
+    /**
+     * Create audit log entry
+     */
+    private async createAuditLog(logData: {
+        leaveRequestId?: Types.ObjectId;
+        action: AuditAction;
+        performedBy: Types.ObjectId;
+        oldValues?: Record<string, any>;
+        newValues?: Record<string, any>;
+        reason?: string;
+    }): Promise<LeaveAuditLog> {
+        const auditLog = new this.leaveAuditLogModel(logData);
+        return auditLog.save();
+    }
+
+    /**
+     * Get audit logs for a leave request
+     */
+    async getAuditLogs(requestId: string): Promise<LeaveAuditLog[]> {
+        return this.leaveAuditLogModel
+            .find({ leaveRequestId: new Types.ObjectId(requestId) })
+            .sort({ createdAt: -1 })
+            .populate('performedBy')
+            .exec();
+    }
+
+    // ============ MANAGER DELEGATION (REQ-023) ============
+
+    /**
+     * Create a delegation
+     */
+    async createDelegation(
+        delegatorId: Types.ObjectId,
+        delegationData: {
+            delegateeId: string;
+            startDate: Date;
+            endDate: Date;
+            reason?: string;
+        }
+    ): Promise<LeaveDelegation> {
+        // Validate date range
+        if (delegationData.startDate >= delegationData.endDate) {
+            throw new BadRequestException('Start date must be before end date');
+        }
+
+        // Check for overlapping delegations
+        const overlapping = await this.leaveDelegationModel.findOne({
+            delegatorId,
+            isActive: true,
+            $or: [
+                {
+                    startDate: { $lte: delegationData.endDate },
+                    endDate: { $gte: delegationData.startDate }
+                }
+            ]
+        }).exec();
+
+        if (overlapping) {
+            throw new BadRequestException(
+                'Delegation overlaps with an existing active delegation'
+            );
+        }
+
+        const delegation = new this.leaveDelegationModel({
+            delegatorId,
+            delegateeId: new Types.ObjectId(delegationData.delegateeId),
+            startDate: delegationData.startDate,
+            endDate: delegationData.endDate,
+            reason: delegationData.reason,
+            isActive: true,
+            createdBy: delegatorId
+        });
+
+        return delegation.save();
+    }
+
+    /**
+     * Get active delegations for a delegator
+     */
+    async getActiveDelegations(delegatorId: Types.ObjectId): Promise<LeaveDelegation[]> {
+        const now = new Date();
+        return this.leaveDelegationModel.find({
+            delegatorId,
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        }).populate('delegateeId').exec();
+    }
+
+    /**
+     * Revoke a delegation
+     */
+    async revokeDelegation(
+        delegationId: string,
+        revokedBy: Types.ObjectId
+    ): Promise<LeaveDelegation> {
+        const delegation = await this.leaveDelegationModel.findById(delegationId).exec();
+        
+        if (!delegation) {
+            throw new NotFoundException(`Delegation ${delegationId} not found`);
+        }
+
+        delegation.isActive = false;
+        delegation.revokedAt = new Date();
+        delegation.revokedBy = revokedBy;
+        
+        return delegation.save();
+    }
+
+    /**
+     * Check if a user can approve on behalf of a manager
+     */
+    async canApproveOnBehalf(
+        delegateeId: Types.ObjectId,
+        managerId: Types.ObjectId
+    ): Promise<boolean> {
+        const now = new Date();
+        const delegation = await this.leaveDelegationModel.findOne({
+            delegatorId: managerId,
+            delegateeId,
+            isActive: true,
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        }).exec();
+
+        return !!delegation;
+    }
+
+    // ============ ACCRUAL ELIGIBILITY DURING UNPAID LEAVE (REQ-042) ============
+
+    /**
+     * Check if employee is on unpaid leave during a period
+     */
+    async isOnUnpaidLeave(employeeId: Types.ObjectId, startDate: Date, endDate: Date): Promise<boolean> {
+        // Find unpaid leave types
+        const unpaidLeaveTypes = await this.leaveTypeModel.find({ paid: false }).exec();
+        const unpaidLeaveTypeIds = unpaidLeaveTypes.map(lt => lt._id);
+
+        if (unpaidLeaveTypeIds.length === 0) {
+            return false;
+        }
+
+        // Check for approved unpaid leave requests in the period
+        const unpaidLeaveRequest = await this.leaveRequestModel.findOne({
+            employeeId,
+            leaveTypeId: { $in: unpaidLeaveTypeIds },
+            status: LeaveStatus.APPROVED,
+            $or: [
+                {
+                    startDate: { $lte: endDate },
+                    endDate: { $gte: startDate }
+                }
+            ]
+        }).exec();
+
+        return !!unpaidLeaveRequest;
+    }
+
+    /**
+     * Create accrual record (skipped if on unpaid leave)
+     */
+    async createAccrualRecord(
+        employeeId: Types.ObjectId,
+        leaveTypeId: Types.ObjectId,
+        accrualDate: Date,
+        accrualAmount: number,
+        periodStart: Date,
+        periodEnd: Date
+    ): Promise<LeaveAccrual> {
+        // Check if employee is on unpaid leave during the accrual period
+        const onUnpaidLeave = await this.isOnUnpaidLeave(employeeId, periodStart, periodEnd);
+
+        const accrual = new this.leaveAccrualModel({
+            employeeId,
+            leaveTypeId,
+            accrualDate,
+            accrualAmount,
+            roundedAmount: Math.round(accrualAmount * 100) / 100,
+            periodStart,
+            periodEnd,
+            skipped: onUnpaidLeave,
+            skipReason: onUnpaidLeave ? 'Employee on unpaid leave during accrual period' : undefined
+        });
+
+        return accrual.save();
+    }
+
+    /**
+     * Get accrual history for an employee
+     */
+    async getAccrualHistory(
+        employeeId: Types.ObjectId,
+        leaveTypeId?: Types.ObjectId
+    ): Promise<LeaveAccrual[]> {
+        const query: any = { employeeId };
+        if (leaveTypeId) {
+            query.leaveTypeId = leaveTypeId;
+        }
+
+        return this.leaveAccrualModel
+            .find(query)
+            .sort({ accrualDate: -1 })
+            .exec();
+    }
 }

@@ -3,18 +3,31 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Param,
   UsePipes,
   ValidationPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { LeavesService } from './leaves.service';
-// Import DTOs for type safety (you will need to create these files)
-// import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
-// import { CreateLeavePolicyDto } from './dto/create-leave-policy.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Permissions, CurrentUser } from '../auth/decorators/roles.decorators';
+import { Permission } from '../auth/permissions.constant';
+import { AuthUser } from '../auth/auth-user.interface';
+import { CreateHolidayDto } from './dto/create-holiday.dto';
+import { CreateBlockedPeriodDto } from './dto/create-blocked-period.dto';
+import { CreateLeaveTypeDto } from './dto/create-leave-type.dto';
+import { CreateLeaveCategoryDto } from './dto/create-leave-category.dto';
+import { CreateResetPolicyDto } from './dto/create-reset-policy.dto';
+import { UpdateLeaveRequestDto } from './dto/update-leave-request.dto';
+import { CreateDelegationDto } from './dto/create-delegation.dto';
+import { Types } from 'mongoose';
 
 @Controller('leaves') // Base route is /leaves
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class LeavesController {
   constructor(private readonly leavesService: LeavesService) {}
 
@@ -25,10 +38,12 @@ export class LeavesController {
    * Handles submission of a new leave request (REQ-015).
    */
   @Post('request')
-  @UsePipes(new ValidationPipe({ transform: true })) // Enables validation and automatic transformation
+  @Permissions(Permission.REQUEST_LEAVE)
+  @UsePipes(new ValidationPipe({ transform: true }))
   async submitRequest(
     @Body()
-    createRequestDto: any /* Replace 'any' with CreateLeaveRequestDto */,
+    createRequestDto: any,
+    @CurrentUser() user: AuthUser,
   ) {
     return this.leavesService.submitRequest(createRequestDto);
   }
@@ -50,6 +65,7 @@ export class LeavesController {
    * The logic inside the service determines the next step and final synchronization (REQ-042).
    */
   @Put('request/:id/review')
+  @Permissions(Permission.APPROVE_LEAVES)
   async reviewRequest(
     @Param('id') requestId: string,
     @Body()
@@ -59,7 +75,6 @@ export class LeavesController {
       isHR: boolean;
     },
   ) {
-    // Service logic handles routing based on 'isHR' and 'action'
     return this.leavesService.processReview(requestId, reviewData);
   }
 
@@ -70,8 +85,9 @@ export class LeavesController {
    * Creates a new standardized leave policy (e.g., Annual, Sick). (REQ-006)
    */
   @Post('policies')
+  @Permissions(Permission.MANAGE_LEAVES)
   async createPolicy(
-    @Body() policyData: any /* Replace 'any' with CreateLeavePolicyDto */,
+    @Body() policyData: any,
   ) {
     return this.leavesService.createPolicy(policyData);
   }
@@ -81,6 +97,7 @@ export class LeavesController {
    * Allows HR Admin to perform manual adjustments (e.g., for audit findings, bulk updates). (REQ-013)
    */
   @Put('balances/adjust')
+  @Permissions(Permission.MANAGE_LEAVES)
   async adjustBalance(
     @Body()
     adjustmentData: {
@@ -90,7 +107,6 @@ export class LeavesController {
       justification: string;
     },
   ) {
-    // The service must log this action to maintain a full audit trail (BR 17)
     return this.leavesService.manualAdjustBalance(adjustmentData);
   }
 
@@ -182,6 +198,7 @@ export class LeavesController {
 
   // In your leaves.controller.ts
   @Post('encash/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
   async encashLeave(
     @Param('id') requestId: string,
     @Body() encashData: { dailySalaryRate: number },
@@ -190,5 +207,284 @@ export class LeavesController {
       requestId,
       dailySalaryRate: encashData.dailySalaryRate,
     });
+  }
+
+  // ============ LEAVE CALENDAR MANAGEMENT (REQ-010) ============
+
+  /**
+   * POST /leaves/calendar/:year/holidays
+   * Add a holiday to the calendar (HR_ADMIN only)
+   */
+  @Post('calendar/:year/holidays')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async addHoliday(
+    @Param('year') year: number,
+    @Body() holidayData: CreateHolidayDto,
+  ) {
+    return this.leavesService.addHoliday(year, holidayData);
+  }
+
+  /**
+   * DELETE /leaves/calendar/:year/holidays
+   * Remove a holiday from the calendar (HR_ADMIN only)
+   */
+  @Delete('calendar/:year/holidays')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async removeHoliday(
+    @Param('year') year: number,
+    @Query('date') date: string,
+  ) {
+    return this.leavesService.removeHoliday(year, new Date(date));
+  }
+
+  /**
+   * POST /leaves/calendar/:year/blocked-periods
+   * Add a blocked period to the calendar (HR_ADMIN only)
+   */
+  @Post('calendar/:year/blocked-periods')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async addBlockedPeriod(
+    @Param('year') year: number,
+    @Body() blockedPeriodData: CreateBlockedPeriodDto,
+  ) {
+    return this.leavesService.addBlockedPeriod(year, blockedPeriodData);
+  }
+
+  /**
+   * DELETE /leaves/calendar/:year/blocked-periods
+   * Remove a blocked period from the calendar (HR_ADMIN only)
+   */
+  @Delete('calendar/:year/blocked-periods')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async removeBlockedPeriod(
+    @Param('year') year: number,
+    @Query('from') from: string,
+    @Query('to') to: string,
+  ) {
+    return this.leavesService.removeBlockedPeriod(year, new Date(from), new Date(to));
+  }
+
+  /**
+   * GET /leaves/calendar/:year
+   * Get calendar for a year
+   */
+  @Get('calendar/:year')
+  @Permissions(Permission.REQUEST_LEAVE, Permission.APPROVE_LEAVES, Permission.MANAGE_LEAVES)
+  async getCalendar(@Param('year') year: number) {
+    return this.leavesService.getCalendar(year);
+  }
+
+  // ============ LEAVE TYPE & CATEGORY MANAGEMENT (REQ-011) ============
+
+  /**
+   * POST /leaves/categories
+   * Create a leave category (HR_ADMIN only)
+   */
+  @Post('categories')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async createLeaveCategory(@Body() categoryData: CreateLeaveCategoryDto) {
+    return this.leavesService.createLeaveCategory(categoryData);
+  }
+
+  /**
+   * GET /leaves/categories
+   * Get all leave categories
+   */
+  @Get('categories')
+  @Permissions(Permission.REQUEST_LEAVE, Permission.APPROVE_LEAVES, Permission.MANAGE_LEAVES)
+  async getLeaveCategories() {
+    return this.leavesService.getLeaveCategories();
+  }
+
+  /**
+   * PUT /leaves/categories/:id
+   * Update a leave category (HR_ADMIN only)
+   */
+  @Put('categories/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateLeaveCategory(
+    @Param('id') categoryId: string,
+    @Body() updateData: CreateLeaveCategoryDto,
+  ) {
+    return this.leavesService.updateLeaveCategory(categoryId, updateData);
+  }
+
+  /**
+   * DELETE /leaves/categories/:id
+   * Delete a leave category (HR_ADMIN only)
+   */
+  @Delete('categories/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async deleteLeaveCategory(@Param('id') categoryId: string) {
+    return this.leavesService.deleteLeaveCategory(categoryId);
+  }
+
+  /**
+   * POST /leaves/types
+   * Create a leave type (HR_ADMIN only)
+   */
+  @Post('types')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async createLeaveType(@Body() leaveTypeData: CreateLeaveTypeDto) {
+    return this.leavesService.createLeaveType(leaveTypeData);
+  }
+
+  /**
+   * GET /leaves/types
+   * Get all leave types
+   */
+  @Get('types')
+  @Permissions(Permission.REQUEST_LEAVE, Permission.APPROVE_LEAVES, Permission.MANAGE_LEAVES)
+  async getLeaveTypes() {
+    return this.leavesService.getLeaveTypes();
+  }
+
+  /**
+   * PUT /leaves/types/:id
+   * Update a leave type (HR_ADMIN only)
+   */
+  @Put('types/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateLeaveType(
+    @Param('id') leaveTypeId: string,
+    @Body() updateData: Partial<CreateLeaveTypeDto>,
+  ) {
+    return this.leavesService.updateLeaveType(leaveTypeId, updateData as any);
+  }
+
+  /**
+   * DELETE /leaves/types/:id
+   * Delete a leave type (HR_ADMIN only)
+   */
+  @Delete('types/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async deleteLeaveType(@Param('id') leaveTypeId: string) {
+    return this.leavesService.deleteLeaveType(leaveTypeId);
+  }
+
+  // ============ RESET-DATE POLICY CONFIGURATION (REQ-012) ============
+
+  /**
+   * POST /leaves/reset-policies
+   * Create or update reset policy (HR_ADMIN only)
+   */
+  @Post('reset-policies')
+  @Permissions(Permission.MANAGE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async createResetPolicy(@Body() policyData: CreateResetPolicyDto) {
+    return this.leavesService.createResetPolicy(policyData);
+  }
+
+  /**
+   * GET /leaves/reset-policies
+   * Get reset policy for organization and leave type
+   */
+  @Get('reset-policies')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async getResetPolicy(
+    @Query('organizationId') organizationId: string,
+    @Query('leaveTypeId') leaveTypeId: string,
+  ) {
+    return this.leavesService.getResetPolicy(organizationId, leaveTypeId);
+  }
+
+  // ============ EDIT PENDING LEAVE REQUESTS (REQ-017) ============
+
+  /**
+   * PUT /leaves/request/:id
+   * Update a pending leave request (EMPLOYEE only, for their own requests)
+   */
+  @Put('request/:id')
+  @Permissions(Permission.REQUEST_LEAVE)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updatePendingLeaveRequest(
+    @Param('id') requestId: string,
+    @Body() updateData: UpdateLeaveRequestDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.leavesService.updatePendingLeaveRequest(
+      requestId,
+      updateData,
+      new Types.ObjectId(user.userId),
+    );
+  }
+
+  /**
+   * GET /leaves/request/:id/audit-logs
+   * Get audit logs for a leave request
+   */
+  @Get('request/:id/audit-logs')
+  @Permissions(Permission.MANAGE_LEAVES, Permission.APPROVE_LEAVES)
+  async getAuditLogs(@Param('id') requestId: string) {
+    return this.leavesService.getAuditLogs(requestId);
+  }
+
+  // ============ MANAGER DELEGATION (REQ-023) ============
+
+  /**
+   * POST /leaves/delegations
+   * Create a delegation (MANAGER only)
+   */
+  @Post('delegations')
+  @Permissions(Permission.APPROVE_LEAVES)
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async createDelegation(
+    @Body() delegationData: CreateDelegationDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.leavesService.createDelegation(
+      new Types.ObjectId(user.userId),
+      delegationData,
+    );
+  }
+
+  /**
+   * GET /leaves/delegations/active
+   * Get active delegations for current user
+   */
+  @Get('delegations/active')
+  @Permissions(Permission.APPROVE_LEAVES)
+  async getActiveDelegations(@CurrentUser() user: AuthUser) {
+    return this.leavesService.getActiveDelegations(new Types.ObjectId(user.userId));
+  }
+
+  /**
+   * DELETE /leaves/delegations/:id
+   * Revoke a delegation
+   */
+  @Delete('delegations/:id')
+  @Permissions(Permission.APPROVE_LEAVES)
+  async revokeDelegation(
+    @Param('id') delegationId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.leavesService.revokeDelegation(
+      delegationId,
+      new Types.ObjectId(user.userId),
+    );
+  }
+
+  // ============ ACCRUAL HISTORY ============
+
+  /**
+   * GET /leaves/accruals/:employeeId
+   * Get accrual history for an employee
+   */
+  @Get('accruals/:employeeId')
+  @Permissions(Permission.MANAGE_LEAVES, Permission.REQUEST_LEAVE)
+  async getAccrualHistory(
+    @Param('employeeId') employeeId: string,
+    @Query('leaveTypeId') leaveTypeId?: string,
+  ) {
+    return this.leavesService.getAccrualHistory(
+      new Types.ObjectId(employeeId),
+      leaveTypeId ? new Types.ObjectId(leaveTypeId) : undefined,
+    );
   }
 }
