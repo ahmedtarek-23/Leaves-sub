@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaves Frontend - Auth Test Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .code {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Leaves Frontend - Authentication Test Helper</h1>
+    
+    <div class="card">
+        <h2>Quick Role Switcher</h2>
+        <p>Click a button to set your role and redirect to the leaves dashboard:</p>
+        
+        <button onclick="setRole('employee')">👤 Employee</button>
+        <button onclick="setRole('manager')">👔 Manager</button>
+        <button onclick="setRole('hr')">👥 HR Admin</button>
+        <button onclick="setRole('admin')">⚙️ System Admin</button>
+        
+        <div id="status" style="margin-top: 20px;"></div>
+    </div>
+
+    <div class="card">
+        <h2>Current User</h2>
+        <div id="currentUser" class="code">Loading...</div>
+        <button onclick="loadCurrentUser()">Refresh</button>
+        <button onclick="clearUser()">Clear User</button>
+    </div>
+
+    <div class="card">
+        <h2>Manual Setup</h2>
+        <p>Or manually set user data in browser console:</p>
+        <div class="code">
+localStorage.setItem('user', JSON.stringify({
+  userId: '1',
+  email: 'employee@test.com',
+  role: 'department employee',
+  employeeId: 'emp1'
+}));
+location.reload();
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Available Roles</h2>
+        <ul>
+            <li><code>department employee</code> - Basic employee access</li>
+            <li><code>department head</code> - Manager with approvals</li>
+            <li><code>HR Admin</code> - HR with review access</li>
+            <li><code>HR Manager</code> - Full HR access</li>
+            <li><code>System Admin</code> - Full system access</li>
+        </ul>
+    </div>
+
+    <script>
+        const roles = {
+            employee: {
+                userId: '1',
+                email: 'employee@test.com',
+                role: 'department employee',
+                employeeId: 'emp1'
+            },
+            manager: {
+                userId: '2',
+                email: 'manager@test.com',
+                role: 'department head',
+                employeeId: 'mgr1'
+            },
+            hr: {
+                userId: '3',
+                email: 'hr@test.com',
+                role: 'HR Admin',
+                employeeId: 'hr1'
+            },
+            admin: {
+                userId: '4',
+                email: 'admin@test.com',
+                role: 'System Admin',
+                employeeId: 'admin1'
+            }
+        };
+
+        function setRole(roleKey) {
+            const user = roles[roleKey];
+            if (!user) {
+                showStatus('Invalid role', 'error');
+                return;
+            }
+
+            try {
+                localStorage.setItem('user', JSON.stringify(user));
+                showStatus(`✅ Set as ${user.role}. Redirecting...`, 'success');
+                setTimeout(() => {
+                    window.location.href = '/leaves/dashboard';
+                }, 500);
+            } catch (e) {
+                showStatus('❌ Error: ' + e.message, 'error');
+            }
+        }
+
+        function loadCurrentUser() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    document.getElementById('currentUser').textContent = JSON.stringify(user, null, 2);
+                } else {
+                    document.getElementById('currentUser').textContent = 'No user set';
+                }
+            } catch (e) {
+                document.getElementById('currentUser').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        function clearUser() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('access_token');
+            showStatus('✅ User cleared', 'success');
+            loadCurrentUser();
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = type;
+        }
+
+        // Load current user on page load
+        loadCurrentUser();
+    </script>
+</body>
+</html>
+
