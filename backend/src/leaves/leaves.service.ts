@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 // Lightweight shim – avoid hard dependency on @nestjs/schedule for tests
 // if not installed. Use the shim located in this leaves folder.
-import { Cron as CronShim, CronExpression as CronExpressionShim } from './schedule-shim';
+import { CronDecorator as CronShim, CronExpression as CronExpressionShim } from './schedule-shim';
 import { Document } from 'mongoose';
 
 
@@ -22,7 +22,7 @@ import { LeaveAuditLog, AuditAction } from './models/leave-audit-log.schema';
 import { LeaveNotification } from './models/leave-notification.schema';
 import { LeaveAccrual } from './models/leave-accrual.schema';
 import { LeaveBalance } from './models/leave-balance.schema';
-import { ResetPolicy } from './models/reset-policy.schema';
+import { ResetPolicy, ResetType } from './models/reset-policy.schema';
 import { NotificationService } from './notifications/notification.service';
 
 // Import Enums
@@ -181,12 +181,12 @@ export class LeavesService {
     private async checkTeamSchedulingConflicts(employeeId: string, startDate: Date, endDate: Date): Promise<void> {
         // Get employee's team members through manager
         //Requires external fix for method existence
-        const employeeProfile = await this.employeeProfileService.getEmployeeProfile(employeeId);
-        const managerId = employeeProfile.managerId;
+        const employeeProfile = await (this.employeeProfileService as any).getEmployeeProfile(employeeId);
+        const managerId = employeeProfile?.managerId;
         
         if (managerId) {
             //Requires external fix for method existence
-            const teamMembers = await this.employeeProfileService.getTeamMembers(managerId);
+            const teamMembers = await (this.employeeProfileService as any).getTeamMembers(managerId);
             const teamMemberIds = teamMembers.map(member => member._id).filter(id => id.toString() !== employeeId);
 
             // Check for overlapping leaves in the same team - UPDATED FOR dates OBJECT
@@ -209,8 +209,14 @@ export class LeavesService {
     }
 
     private async applyFlaggingHeuristics(request: LeaveRequest & Document): Promise<void> {
+        // Safety check: ensure employeeId exists before processing
+        if (!request.employeeId) {
+            this.logger.warn(`Cannot apply flagging heuristics: employeeId is missing for request ${request._id}`);
+            return;
+        }
+
         const heuristics = [
-            await this.checkFrequentShortLeaves(request.employeeId.toString()),
+            await this.checkFrequentShortLeaves(request.employeeId.toString(), request.leaveTypeId),
             await this.checkMondayFridayPattern(request),
             await this.checkLongSickWithoutDocs(request)
         ];
@@ -234,17 +240,27 @@ export class LeavesService {
         }
     }
 
-    private async checkFrequentShortLeaves(employeeId: string) {
+    private async checkFrequentShortLeaves(employeeId: string, leaveTypeId: Types.ObjectId): Promise<{
+        shouldFlag: boolean;
+        reason: string;
+        priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    }> {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+        // Use the provided leaveTypeId instead of hardcoded value
+        // This allows the check to work for any leave type, not just annual leave
+        // Support both date field formats: dates.from/to or startDate/endDate
         const shortLeaves = await this.leaveRequestModel.countDocuments({
             employeeId: new Types.ObjectId(employeeId),
-            leaveTypeId: new Types.ObjectId('annual_leave_id'), // Adjust ID
+            leaveTypeId: leaveTypeId,
             durationDays: { $lte: 2 },
-            startDate: { $gte: thirtyDaysAgo },
+            $or: [
+                { 'dates.from': { $gte: thirtyDaysAgo } },
+                { startDate: { $gte: thirtyDaysAgo } }
+            ],
             status: LeaveStatus.APPROVED
-        });
+        }).exec();
 
         return {
             shouldFlag: shortLeaves >= 3,
@@ -254,8 +270,20 @@ export class LeavesService {
     }
 
     private async checkMondayFridayPattern(request: LeaveRequest) {
-        const startDay = new Date(request.dates.from).getDay(); // ← CHANGE from request.startDate
-        const endDay = new Date(request.dates.to).getDay(); 
+        // Support both date field formats: dates.from/to or startDate/endDate
+        const startDate = (request as any).dates?.from || request.startDate;
+        const endDate = (request as any).dates?.to || request.endDate;
+        
+        if (!startDate || !endDate) {
+            return {
+                shouldFlag: false,
+                reason: '',
+                priority: 'LOW' as const
+            };
+        }
+        
+        const startDay = new Date(startDate).getDay();
+        const endDay = new Date(endDate).getDay(); 
         
         const isMondayStart = startDay === 1;
         const isFridayEnd = endDay === 5;
@@ -296,9 +324,21 @@ export class LeavesService {
             throw new NotFoundException(`Request ${requestId} not found.`);
         }
 
-        let newStatus: LeaveStatus = request.status as LeaveStatus;
-        
-        // ... your existing status determination logic ...
+        // Prevent further reviews after final status
+        if (request.status === LeaveStatus.APPROVED || request.status === LeaveStatus.REJECTED) {
+            throw new BadRequestException(`Cannot review request with final status: ${request.status}`);
+        }
+
+        // REQ-021, REQ-025: Explicit status determination based on action
+        let newStatus: LeaveStatus;
+        if (reviewData.action === 'APPROVE') {
+            newStatus = LeaveStatus.APPROVED;
+        } else if (reviewData.action === 'REJECT') {
+            newStatus = LeaveStatus.REJECTED;
+        } else {
+            // For other actions like OVERRIDE, keep current status or handle accordingly
+            newStatus = request.status as LeaveStatus;
+        }
 
         // Update the record status and log the action
         const updatedRequest = await this.leaveRequestModel.findByIdAndUpdate(
@@ -394,12 +434,23 @@ export class LeavesService {
 
     // OFF-013, BR 53: Offboarding
     async processFinalSettlement(employeeId: string, dailySalaryRate: number): Promise<any> {
-        const ANNUAL_LEAVE_TYPE_ID = new Types.ObjectId('your_annual_leave_id'); 
         const MAX_ENCASH_DAYS = 30; // Capped at 30 days (BR 53)
+
+        // Find annual leave type by name or code
+        const annualLeaveType = await this.leaveTypeModel.findOne({
+            $or: [
+                { name: { $regex: /annual/i } },
+                { code: { $in: ['AL', 'ANNUAL'] } }
+            ]
+        }).exec();
+
+        if (!annualLeaveType) {
+            throw new NotFoundException('Annual leave type not found in system');
+        }
 
         const entitlement = await this.leaveEntitlementModel.findOne({ 
             employeeId, 
-            leaveTypeId: ANNUAL_LEAVE_TYPE_ID 
+            leaveTypeId: annualLeaveType._id 
         }).exec();
 
         if (!entitlement) {
@@ -411,7 +462,7 @@ export class LeavesService {
 
         // External Dependency 
         //Requires external fix for method existence
-        this.payrollExecutionService.processFinalPayment({ employeeId, encashmentAmount }); 
+        await (this.payrollExecutionService as any).processFinalPayment({ employeeId, encashmentAmount }); 
 
         return { unusedDays, encashmentAmount };
     }
@@ -441,7 +492,7 @@ export class LeavesService {
                     payrollCode: await this.getPayrollPayCode(request.leaveTypeId)
                 });
             } else {
-                await this.payrollExecutionService.applyLeaveAdjustment({
+                await (this.payrollExecutionService as any).applyLeaveAdjustment({
                     employeeId: request.employeeId.toString(),
                     leaveRequestId: request._id.toString(),
                     leaveType: await this.getLeaveTypeName(request.leaveTypeId),
@@ -463,7 +514,7 @@ export class LeavesService {
                     leaveType: await this.getLeaveTypeName(request.leaveTypeId)
                 });
             } else {
-                await this.timeManagementService.blockLeavePeriod({
+                await (this.timeManagementService as any).blockLeavePeriod({
                     employeeId: request.employeeId.toString(),
                     leaveRequestId: request._id.toString(),
                     startDate: request.startDate,
@@ -690,7 +741,7 @@ async bulkReview(bulkReviewData: {
 
         // Send notification about verification result
         //Requires external fix for method existence
-        await this.notificationService.sendMedicalVerificationNotification(
+        await (this.notificationService as any).sendMedicalVerificationNotification(
             request.employeeId.toString(),
             verificationData.isValid ? 'APPROVED' : 'REJECTED',
             requestId
@@ -894,7 +945,7 @@ async applyCarryForward(): Promise<void> {
                     await request.save();
 
                     //Requires external fix for method existence
-                    await this.notificationService.sendEscalationNotification(
+                    await (this.notificationService as any).sendEscalationNotification(
                         request._id.toString(),
                         request.managerId?.toString()
                     );
@@ -935,8 +986,18 @@ async applyCarryForward(): Promise<void> {
         throw new BadRequestException('Only approved leave requests can be encashed');
     }
 
-    const ANNUAL_LEAVE_TYPE_ID = new Types.ObjectId('your_annual_leave_id');
-    if (request.leaveTypeId.toString() !== ANNUAL_LEAVE_TYPE_ID.toString()) {
+    // Check if the leave type is annual leave by looking up the leave type
+    const leaveType = await this.leaveTypeModel.findById(request.leaveTypeId).exec();
+    if (!leaveType) {
+        throw new NotFoundException(`Leave type ${request.leaveTypeId} not found`);
+    }
+    
+    // Check if it's annual leave by name or code (case-insensitive)
+    const isAnnualLeave = leaveType.name?.toLowerCase().includes('annual') || 
+                         leaveType.code?.toUpperCase() === 'AL' ||
+                         leaveType.code?.toUpperCase() === 'ANNUAL';
+    
+    if (!isAnnualLeave) {
         throw new BadRequestException('Only annual leave can be encashed');
     }
 
@@ -966,7 +1027,7 @@ async applyCarryForward(): Promise<void> {
 
     // 6. Trigger payroll payment
     //Requires external fix for method existence
-    await this.payrollExecutionService.processFinalPayment({
+    await (this.payrollExecutionService as any).processFinalPayment({
         employeeId: request.employeeId.toString(),
         encashmentAmount
     });
@@ -1348,6 +1409,191 @@ async applyCarryForward(): Promise<void> {
             organizationId: new Types.ObjectId(organizationId),
             leaveTypeId: new Types.ObjectId(leaveTypeId)
         }).exec();
+    }
+
+    /**
+     * REQ-012: Year-End Processing
+     * Processes leave balance resets based on active reset policies
+     * Can be called via scheduled job or manual admin trigger
+     */
+    async processYearEnd(organizationId?: string, year?: number): Promise<{
+        processed: number;
+        errors: number;
+        details: Array<{
+            employeeId: string;
+            leaveTypeId: string;
+            previousBalance: number;
+            newBalance: number;
+            resetPolicyId: string;
+        }>;
+    }> {
+        this.logger.log('🔄 Starting year-end processing...');
+        
+        const currentYear = year || new Date().getFullYear();
+        const now = new Date();
+        const processedDetails: Array<{
+            employeeId: string;
+            leaveTypeId: string;
+            previousBalance: number;
+            newBalance: number;
+            resetPolicyId: string;
+        }> = [];
+        let processedCount = 0;
+        let errorCount = 0;
+
+        try {
+            // Find all active reset policies where reset date has passed
+            const query: any = {
+                isActive: true,
+                nextResetDate: { $lte: now }
+            };
+            
+            if (organizationId) {
+                query.organizationId = new Types.ObjectId(organizationId);
+            }
+
+            const activePolicies = await this.resetPolicyModel.find(query).exec();
+            this.logger.log(`Found ${activePolicies.length} active reset policies to process`);
+
+            for (const policy of activePolicies) {
+                try {
+                    // Find all entitlements for this leave type within the organization
+                    const entitlementsQuery: any = {
+                        leaveTypeId: policy.leaveTypeId,
+                        isActive: true,
+                        fiscalYear: { $lt: currentYear } // Only process entitlements from previous year
+                    };
+
+                    // If organizationId is provided, filter by organization
+                    // Note: This assumes employeeId can be used to determine organization
+                    // If your schema has organizationId in entitlements, use that instead
+                    const entitlements = await this.leaveEntitlementModel.find(entitlementsQuery).exec();
+
+                    for (const entitlement of entitlements) {
+                        try {
+                            // Get the policy for this leave type to check carry-forward rules
+                            const leavePolicy = await this.leavePolicyModel.findOne({
+                                leaveTypeId: policy.leaveTypeId,
+                                isActive: true
+                            }).exec();
+
+                            const previousBalance = entitlement.remaining;
+                            let newBalance = 0;
+                            let carryForwardAmount = 0;
+
+                            // Apply carry-forward rules if allowed
+                            if (leavePolicy?.carryForwardAllowed && leavePolicy?.maxCarryForward) {
+                                carryForwardAmount = Math.min(entitlement.remaining, leavePolicy.maxCarryForward);
+                                newBalance = carryForwardAmount;
+                                
+                                // Expire excess balances if configured
+                                const excessDays = entitlement.remaining - carryForwardAmount;
+                                if (excessDays > 0) {
+                                    this.logger.debug(
+                                        `Expiring ${excessDays} excess days for employee ${entitlement.employeeId}, leave type ${policy.leaveTypeId}`
+                                    );
+                                }
+                            }
+
+                            // Store previous fiscal year before updating
+                            const previousFiscalYear = entitlement.fiscalYear || (currentYear - 1);
+
+                            // Update entitlement with new balance
+                            entitlement.previousYearBalance = previousBalance;
+                            entitlement.carriedOver = carryForwardAmount;
+                            entitlement.remaining = newBalance;
+                            entitlement.taken = 0; // Reset taken days for new year
+                            entitlement.pending = 0; // Reset pending days for new year
+                            entitlement.fiscalYear = currentYear;
+                            entitlement.lastCarryForwardDate = now;
+                            // Note: nextResetDate is stored in ResetPolicy, not LeaveEntitlement
+
+                            await entitlement.save();
+
+                            // Create audit log for reset operation
+                            // Note: Using a placeholder system user ID - in production, use actual system user
+                            const systemUserId = new Types.ObjectId('000000000000000000000000'); // Placeholder
+                            await this.createAuditLog({
+                                action: AuditAction.ADJUST,
+                                performedBy: systemUserId,
+                                oldValues: {
+                                    remaining: previousBalance,
+                                    fiscalYear: previousFiscalYear
+                                },
+                                newValues: {
+                                    remaining: newBalance,
+                                    carriedOver: carryForwardAmount,
+                                    fiscalYear: currentYear
+                                },
+                                reason: `Year-end reset: ${carryForwardAmount} days carried forward, ${previousBalance - carryForwardAmount} days expired`
+                            });
+
+                            processedDetails.push({
+                                employeeId: entitlement.employeeId.toString(),
+                                leaveTypeId: policy.leaveTypeId.toString(),
+                                previousBalance,
+                                newBalance,
+                                resetPolicyId: policy._id.toString()
+                            });
+
+                            processedCount++;
+                        } catch (error) {
+                            errorCount++;
+                            this.logger.error(
+                                `Error processing entitlement for employee ${entitlement.employeeId}, leave type ${policy.leaveTypeId}:`,
+                                error
+                            );
+                        }
+                    }
+
+                    // Update policy's last reset date and calculate next reset date
+                    policy.lastResetDate = now;
+                    policy.nextResetDate = this.calculateNextResetDate(policy);
+                    await policy.save();
+
+                } catch (error) {
+                    errorCount++;
+                    this.logger.error(`Error processing reset policy ${policy._id}:`, error);
+                }
+            }
+
+            this.logger.log(`✅ Year-end processing completed. Processed: ${processedCount}, Errors: ${errorCount}`);
+            
+            return {
+                processed: processedCount,
+                errors: errorCount,
+                details: processedDetails
+            };
+        } catch (error) {
+            this.logger.error('❌ Year-end processing failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Helper method to calculate next reset date based on policy type
+     */
+    private calculateNextResetDate(policy: ResetPolicy): Date {
+        const now = new Date();
+        
+        if (policy.resetType === ResetType.YEARLY) {
+            // Next year, January 1st
+            return new Date(now.getFullYear() + 1, 0, 1);
+        } else if (policy.resetType === ResetType.CUSTOM && policy.customResetDate) {
+            // Next occurrence of custom date
+            const customDate = policy.customResetDate;
+            const nextReset = new Date(now.getFullYear(), customDate.getMonth(), customDate.getDate());
+            
+            // If the date has already passed this year, set it for next year
+            if (nextReset < now) {
+                nextReset.setFullYear(nextReset.getFullYear() + 1);
+            }
+            
+            return nextReset;
+        }
+        
+        // Default: yearly reset
+        return new Date(now.getFullYear() + 1, 0, 1);
     }
 
     // ============ EDIT PENDING LEAVE REQUESTS (REQ-017) ============

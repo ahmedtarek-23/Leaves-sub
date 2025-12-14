@@ -157,8 +157,8 @@ describe('LeavesService E2E Tests', () => {
     }
 
     // Helper function to create mock Mongoose models
-    function createMockModel() {
-        const mockModel = jest.fn().mockImplementation(function(data: any) {
+    function createMockModel(): any {
+        const mockModel: any = jest.fn().mockImplementation(function(data: any) {
             // When called as constructor, return an object with save method
             const instance = {
                 ...data,

@@ -7,7 +7,7 @@
 import { CustomDecorator } from '@nestjs/common';
 
 // No-op decorator if schedule package isn't available
-export function Cron(): MethodDecorator {
+export function Cron(...args: any[]): MethodDecorator {
   return () => undefined as unknown as void;
 }
 

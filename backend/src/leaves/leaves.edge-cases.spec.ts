@@ -12,6 +12,8 @@ describe('LeavesService - Edge Cases', () => {
   let leaveDelegationModel: any;
   let leaveTypeModel: any;
   let leaveCategoryModel: any;
+  let leaveAuditLogModel: any;
+  let resetPolicyModel: any;
 
   const mockEmployeeId = new Types.ObjectId();
   const mockManagerId = new Types.ObjectId();
@@ -63,6 +65,8 @@ describe('LeavesService - Edge Cases', () => {
     leaveDelegationModel = module.get(getModelToken('LeaveDelegation'));
     leaveTypeModel = module.get(getModelToken('LeaveType'));
     leaveCategoryModel = module.get(getModelToken('LeaveCategory'));
+    leaveAuditLogModel = module.get(getModelToken('LeaveAuditLog'));
+    resetPolicyModel = module.get(getModelToken('ResetPolicy'));
   });
 
   describe('Edge Cases - Calendar Management', () => {
@@ -199,13 +203,15 @@ describe('LeavesService - Edge Cases', () => {
       const category = {
         _id: categoryId,
         name: 'Existing Category',
+        save: jest.fn().mockResolvedValue({
+          _id: categoryId,
+          name: 'Existing Category',
+        }),
       };
 
       leaveCategoryModel.findById.mockReturnValue({
         exec: jest.fn().mockResolvedValue(category),
       });
-
-      category.save = jest.fn().mockResolvedValue(category);
 
       const result = await service.updateLeaveCategory(
         categoryId.toString(),
@@ -347,7 +353,7 @@ describe('LeavesService - Edge Cases', () => {
 
       const result = await service.createResetPolicy(policyData);
 
-      expect(result.nextResetDate.getFullYear()).toBe(2025);
+      expect(result.nextResetDate?.getFullYear()).toBe(2025);
     });
 
     it('should handle updating existing reset policy', async () => {

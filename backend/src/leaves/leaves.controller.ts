@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Permissions, CurrentUser } from '../auth/decorators/roles.decorators';
 import { Permission } from '../auth/permissions.constant';
-import { AuthUser } from '../auth/auth-user.interface';
+import type { AuthUser } from '../auth/auth-user.interface';
 import { CreateHolidayDto } from './dto/create-holiday.dto';
 import { CreateBlockedPeriodDto } from './dto/create-blocked-period.dto';
 import { CreateLeaveTypeDto } from './dto/create-leave-type.dto';
@@ -486,5 +486,20 @@ export class LeavesController {
       new Types.ObjectId(employeeId),
       leaveTypeId ? new Types.ObjectId(leaveTypeId) : undefined,
     );
+  }
+
+  // ============ YEAR-END PROCESSING (REQ-012) ============
+
+  /**
+   * POST /leaves/year-end/process
+   * Manually trigger year-end processing (HR_ADMIN only)
+   */
+  @Post('year-end/process')
+  @Permissions(Permission.MANAGE_LEAVES)
+  async processYearEnd(
+    @Query('organizationId') organizationId?: string,
+    @Query('year') year?: number,
+  ) {
+    return this.leavesService.processYearEnd(organizationId, year);
   }
 }
