@@ -3,6 +3,6 @@ export enum LeaveStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   CANCELLED = 'cancelled',
-  ESCALATED = 'escalated',
-  ENCASHED = 'encashed',
+  ESCALATED = 'ESCALATED',
+  ENCASHED = 'ENCASHED',
 }

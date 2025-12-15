@@ -1,12 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { AccrualMethod } from '../enums/accrual-method.enum';
 import { RoundingRule } from '../enums/rounding-rule.enum';
 
-export type LeavePolicyDocument = HydratedDocument<LeavePolicy>;
+export type LeavePolicyDocument = Document & LeavePolicy;
 
 @Schema({ timestamps: true })
-export class LeavePolicy {
+export class LeavePolicy extends Document {
+  declare _id: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 

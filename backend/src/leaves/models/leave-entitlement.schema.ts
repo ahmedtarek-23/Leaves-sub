@@ -1,11 +1,12 @@
 // schemas/leave-entitlement.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
-export type LeaveEntitlementDocument = HydratedDocument<LeaveEntitlement>;
+export type LeaveEntitlementDocument = Document & LeaveEntitlement;
 
 @Schema({ timestamps: true })
-export class LeaveEntitlement {
+export class LeaveEntitlement extends Document {
+  declare _id: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
   employeeId: Types.ObjectId;
 

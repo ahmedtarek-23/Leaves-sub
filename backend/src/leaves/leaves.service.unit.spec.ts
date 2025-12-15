@@ -329,7 +329,7 @@ describe('LeavesService Unit Tests', () => {
 
             const result = await service.getRequestById(requestId);
 
-            expect(result._id.toString()).toBe(requestId);
+            expect((result as any)._id.toString()).toBe(requestId);
         });
 
         it('should throw NotFoundException if request not found', async () => {

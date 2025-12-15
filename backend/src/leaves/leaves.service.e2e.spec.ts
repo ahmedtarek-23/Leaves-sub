@@ -31,6 +31,12 @@ import { EmployeeProfileService } from '../employee-profile/employee-profile.ser
 import { PayrollExecutionService } from '../payroll-execution/payroll-execution.service';
 import { NotificationService } from './notifications/notification.service';
 import { EmployeeProfile } from '../employee-profile/models/employee-profile.schema';
+import { LeaveDelegation } from './models/leave-delegation.schema';
+import { LeaveAuditLog } from './models/leave-audit-log.schema';
+import { LeaveNotification } from './models/leave-notification.schema';
+import { LeaveAccrual } from './models/leave-accrual.schema';
+import { LeaveBalance } from './models/leave-balance.schema';
+import { ResetPolicy } from './models/reset-policy.schema';
 
 describe('LeavesService E2E Tests', () => {
     let service: LeavesService;
@@ -64,6 +70,12 @@ describe('LeavesService E2E Tests', () => {
         const mockLeaveCategoryModel = createMockModel();
         const mockCalendarModel = createMockModel();
         const mockAttachmentModel = createMockModel();
+        const mockLeaveDelegationModel = createMockModel();
+        const mockLeaveAuditLogModel = createMockModel();
+        const mockLeaveNotificationModel = createMockModel();
+        const mockLeaveAccrualModel = createMockModel();
+        const mockLeaveBalanceModel = createMockModel();
+        const mockResetPolicyModel = createMockModel();
         const mockEmployeeProfileModel = createMockModel();
 
         // Create mock services
@@ -101,6 +113,12 @@ describe('LeavesService E2E Tests', () => {
                 { provide: getModelToken(LeaveCategory.name), useValue: mockLeaveCategoryModel },
                 { provide: getModelToken(Calendar.name), useValue: mockCalendarModel },
                 { provide: getModelToken(Attachment.name), useValue: mockAttachmentModel },
+                { provide: getModelToken(LeaveDelegation.name), useValue: mockLeaveDelegationModel },
+                { provide: getModelToken(LeaveAuditLog.name), useValue: mockLeaveAuditLogModel },
+                { provide: getModelToken(LeaveNotification.name), useValue: mockLeaveNotificationModel },
+                { provide: getModelToken(LeaveAccrual.name), useValue: mockLeaveAccrualModel },
+                { provide: getModelToken(LeaveBalance.name), useValue: mockLeaveBalanceModel },
+                { provide: getModelToken(ResetPolicy.name), useValue: mockResetPolicyModel },
                 { provide: getModelToken(EmployeeProfile.name), useValue: mockEmployeeProfileModel },
                 { provide: TimeManagementService, useValue: mockTimeManagementService },
                 { provide: EmployeeProfileService, useValue: mockEmployeeProfileService },
@@ -130,16 +148,17 @@ describe('LeavesService E2E Tests', () => {
 
     // Helper function to create a chainable mock query with exec()
     function createMockQuery(result: any) {
-        return {
+        const query = {
             exec: jest.fn().mockResolvedValue(result),
             populate: jest.fn().mockReturnThis(),
             lean: jest.fn().mockReturnThis(),
         };
+        return query;
     }
 
     // Helper function to create mock Mongoose models
-    function createMockModel() {
-        const mockModel = jest.fn().mockImplementation(function(data: any) {
+    function createMockModel(): any {
+        const mockModel: any = jest.fn().mockImplementation(function(data: any) {
             // When called as constructor, return an object with save method
             const instance = {
                 ...data,
@@ -147,16 +166,16 @@ describe('LeavesService E2E Tests', () => {
             };
             return instance;
         });
-        
+
         // Add model methods that return chainable queries
         mockModel.findOne = jest.fn().mockReturnValue(createMockQuery(null));
         mockModel.find = jest.fn().mockReturnValue(createMockQuery([]));
         mockModel.findById = jest.fn().mockReturnValue(createMockQuery(null));
         mockModel.findByIdAndUpdate = jest.fn().mockReturnValue(createMockQuery(null));
         mockModel.findOneAndUpdate = jest.fn().mockReturnValue(createMockQuery(null));
-        mockModel.create = jest.fn();
+        mockModel.create = jest.fn().mockResolvedValue({});
         mockModel.countDocuments = jest.fn().mockReturnValue(createMockQuery(0));
-        
+
         return mockModel;
     }
 

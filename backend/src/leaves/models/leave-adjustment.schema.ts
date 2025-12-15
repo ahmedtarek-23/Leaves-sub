@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { AdjustmentType } from '../enums/adjustment-type.enum';
@@ -28,3 +27,4 @@ export class LeaveAdjustment {
 
 export const LeaveAdjustmentSchema =
   SchemaFactory.createForClass(LeaveAdjustment);
+

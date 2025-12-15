@@ -1,72 +1,48 @@
-
-import { Prop, Schema, SchemaFactory, } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
-import {  EmployeeProfile as Employee} from '../../employee-profile/models/employee-profile.schema';
+import { EmployeeProfile as Employee } from '../../employee-profile/models/employee-profile.schema';
 import { DisputeStatus } from '../enums/payroll-tracking-enum';
 
-export type disputesDocument = HydratedDocument<disputes>
-
-
+export type disputesDocument = HydratedDocument<disputes>;
 
 @Schema({ timestamps: true })
 export class disputes {
-    @Prop({ required: true, unique: true })
-    disputeId: string; // for frontend view purposes ex: DISP-0001
+  @Prop({ required: true, unique: true })
+  disputeId: string; // for frontend view purposes ex: DISP-0001
 
-    @Prop({ required: true })
-    description: string;
+  @Prop({ required: true })
+  description: string;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
-    employeeId: mongoose.Types.ObjectId;
-=======
-=======
->>>>>>> Stashed changes
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name, required: true })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: Employee.name,
+    required: true,
+  })
   employeeId: mongoose.Types.ObjectId;
->>>>>>> Stashed changes
-
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-    financeStaffId?: mongoose.Types.ObjectId;
-
-<<<<<<< Updated upstream
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'paySlip', required: true })
-    payslipId: mongoose.Types.ObjectId;
-
-    @Prop({ required: true, type: String, enum: DisputeStatus, default: DisputeStatus.UNDER_REVIEW })
-    status: DisputeStatus;// under review, approved, rejected
-=======
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-  payrollSpecialistId?: mongoose.Types.ObjectId;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-  payrollManagerId?: mongoose.Types.ObjectId;
+  financeStaffId?: mongoose.Types.ObjectId;
 
-<<<<<<< Updated upstream
-=======
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-  payrollSpecialistId?: mongoose.Types.ObjectId;
-
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Employee.name })
-  payrollManagerId?: mongoose.Types.ObjectId;
-
->>>>>>> Stashed changes
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'paySlip', required: true })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'paySlip',
+    required: true,
+  })
   payslipId: mongoose.Types.ObjectId;
 
-  @Prop({ required: true, type: String, enum: DisputeStatus, default: DisputeStatus.UNDER_REVIEW })
-  status: DisputeStatus;// under review,pending_manager_approval, approved, rejected
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+  @Prop({
+    required: true,
+    type: String,
+    enum: DisputeStatus,
+    default: DisputeStatus.UNDER_REVIEW,
+  })
+  status: DisputeStatus; // under review, approved, rejected
 
-    @Prop()
-    rejectionReason?: string;
+  @Prop()
+  rejectionReason?: string;
 
-    @Prop()
-    resolutionComment?: string;
+  @Prop()
+  resolutionComment?: string;
 }
 
 export const disputesSchema = SchemaFactory.createForClass(disputes);

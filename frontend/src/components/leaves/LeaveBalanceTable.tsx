@@ -1,53 +1,81 @@
 "use client";
 
-import { LeaveBalance } from "@/types/leave";
+import React from 'react';
+import { LeaveBalance } from '../../types/leave';
 
-type Props = {
-  data: LeaveBalance[];
-};
+interface LeaveBalanceTableProps {
+  balances: LeaveBalance[];
+}
 
-export default function LeaveBalanceTable({ data }: Props) {
+export default function LeaveBalanceTable({ balances }: LeaveBalanceTableProps) {
+  if (balances.length === 0) {
+    return (
+      <div className="border border-gray-200 rounded-lg p-8 text-center bg-gray-50">
+        <p className="text-gray-500 text-sm">No leave balances found.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border border-gray-300">
-        <thead className="bg-gray-100">
+    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <table className="w-full border-collapse">
+        <thead className="bg-gray-50">
           <tr>
-            <th className="border px-3 py-2 text-left">Leave Type</th>
-            <th className="border px-3 py-2 text-center">Accrued</th>
-            <th className="border px-3 py-2 text-center">Taken</th>
-            <th className="border px-3 py-2 text-center">Carry Over</th>
-            <th className="border px-3 py-2 text-center">Remaining</th>
+            <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Leave Type
+            </th>
+            <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Accrued
+            </th>
+            <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Used
+            </th>
+            <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Remaining
+            </th>
+            <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Pending
+            </th>
+            <th className="text-right px-4 py-3 text-sm font-semibold text-gray-700 border-b border-gray-200">
+              Carry-Over
+            </th>
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
-            <tr>
-              <td
-                colSpan={5}
-                className="border px-3 py-4 text-center text-gray-500"
-              >
-                No leave balance data available
+          {balances.map((balance) => (
+            <tr key={balance.leaveTypeCode} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 text-sm text-gray-900 border-b border-gray-100">
+                {balance.leaveTypeName}
+              </td>
+              <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right border-b border-gray-100">
+                {balance.accrued.toFixed(1)} days
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-700 text-right border-b border-gray-100">
+                {balance.used.toFixed(1)} days
+              </td>
+              <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right border-b border-gray-100">
+                {balance.remaining.toFixed(1)} days
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-700 text-right border-b border-gray-100">
+                {balance.pending > 0 ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    {balance.pending.toFixed(1)} days
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </td>
+              <td className="px-4 py-3 text-sm text-gray-700 text-right border-b border-gray-100">
+                {balance.carryOver && balance.carryOver > 0 ? (
+                  <span className="text-blue-600 font-medium">
+                    {balance.carryOver.toFixed(1)} days
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
               </td>
             </tr>
-          ) : (
-            data.map((row, index) => (
-              <tr key={index}>
-                <td className="border px-3 py-2">{row.leaveType}</td>
-                <td className="border px-3 py-2 text-center">
-                  {row.accrued}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {row.taken}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {row.carryOver}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {row.remaining}
-                </td>
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>

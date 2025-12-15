@@ -1,22 +1,25 @@
 // schemas/leave-request.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { LeaveStatus } from '../enums/leave-status.enum';
 
-export type LeaveRequestDocument = HydratedDocument<LeaveRequest>;
+export type LeaveRequestDocument = Document & LeaveRequest;
 
 @Schema({ timestamps: true })
-export class LeaveRequest {
+export class LeaveRequest extends Document {
+  declare _id: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: 'Employee', required: true })
   employeeId: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({
-    type: { from: Date, to: Date },
-    required: true,
-  })
+  @Prop({ required: true })
+  startDate: Date;
+
+  @Prop({ required: true })
+  endDate: Date;
+
   dates: { from: Date; to: Date };
 
   @Prop({ required: true })
@@ -70,7 +73,7 @@ export class LeaveRequest {
 
   @Prop()
   roundedDuration?: number;
- 
+
   @Prop({ default: 0 })
   excessDays: number;
 
@@ -101,7 +104,7 @@ export class LeaveRequest {
   @Prop()
   flagReason?: string;
 
-  @Prop({ enum: ['LOW', 'MEDIUM', 'HIGH'] })
+  @Prop({ type: String, enum: ['LOW', 'MEDIUM', 'HIGH'] })
   flagPriority?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Employee' })
@@ -116,9 +119,14 @@ export class LeaveRequest {
   @Prop()
   escalatedAt?: Date;
 
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+
+  @Prop({ type: Date, default: Date.now })
+  updatedAt: Date;
+
   @Prop()
   rejectionReason?: string;
 }
 
-export const LeaveRequestSchema =
-  SchemaFactory.createForClass(LeaveRequest);
+export const LeaveRequestSchema = SchemaFactory.createForClass(LeaveRequest);

@@ -1,227 +1,202 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { EmployeeProfile } from '../../employee-profile/models/employee-profile.schema';
-
-/**
- * Notification Service for Leaves Management
- * 
- * This service handles all notifications related to leave requests including:
- * - Email notifications
- * - SMS notifications (when configured)
- * - In-app notifications (when implemented)
- * 
- * The service uses a strategy pattern to support multiple notification channels.
- */
-
-export interface NotificationChannel {
-    sendEmail(to: string, subject: string, body: string): Promise<void>;
-    sendSMS(to: string, message: string): Promise<void>;
-}
-
-export interface NotificationRecipient {
-    email?: string;
-    phone?: string;
-    name?: string;
-}
+import { Model, Types } from 'mongoose';
+import {
+  LeaveNotification,
+  NotificationType,
+  NotificationChannel,
+  NotificationStatus,
+} from '../models/leave-notification.schema';
+import { LeaveRequest } from '../models/leave-request.schema';
 
 @Injectable()
 export class NotificationService {
-    private readonly logger = new Logger(NotificationService.name);
-    private notificationChannels: NotificationChannel[] = [];
+  private readonly logger = new Logger(NotificationService.name);
 
-    constructor(
-        @InjectModel('EmployeeProfile') private employeeProfileModel?: Model<EmployeeProfile>,
-    ) {
-        // Initialize notification channels
-        this.initializeChannels();
+  constructor(
+    @InjectModel(LeaveNotification.name)
+    private notificationModel: Model<LeaveNotification>,
+  ) {}
+
+  /**
+   * Mock Email Provider
+   */
+  private async sendEmail(
+    to: string,
+    subject: string,
+    body: string,
+  ): Promise<boolean> {
+    // Mock implementation - in production, integrate with actual email service
+    this.logger.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}`);
+    this.logger.debug(`[MOCK EMAIL] Body: ${body}`);
+    // Simulate async email sending
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return true;
+  }
+
+  /**
+   * Mock SMS Provider
+   */
+  private async sendSMS(to: string, message: string): Promise<boolean> {
+    // Mock implementation - in production, integrate with actual SMS service
+    this.logger.log(`[MOCK SMS] To: ${to}, Message: ${message}`);
+    // Simulate async SMS sending
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return true;
+  }
+
+  /**
+   * Create and send notification
+   */
+  async sendNotification(
+    recipientId: Types.ObjectId,
+    type: NotificationType,
+    channel: NotificationChannel,
+    subject: string,
+    message: string,
+    leaveRequestId?: Types.ObjectId,
+    metadata?: Record<string, any>,
+  ): Promise<LeaveNotification> {
+    const notification = new this.notificationModel({
+      recipientId,
+      type,
+      channel,
+      subject,
+      message,
+      leaveRequestId,
+      metadata,
+      status: NotificationStatus.PENDING,
+    });
+
+    await notification.save();
+
+    try {
+      let success = false;
+      const recipientEmail = `employee-${recipientId}@company.com`; // Mock email
+      const recipientPhone = `+1234567890`; // Mock phone
+
+      if (channel === NotificationChannel.EMAIL) {
+        success = await this.sendEmail(recipientEmail, subject, message);
+      } else if (channel === NotificationChannel.SMS) {
+        success = await this.sendSMS(recipientPhone, message);
+      } else {
+        // IN_APP notification - always successful
+        success = true;
+      }
+
+      notification.status = success
+        ? NotificationStatus.SENT
+        : NotificationStatus.FAILED;
+      notification.sentAt = new Date();
+
+      if (success) {
+        notification.status = NotificationStatus.DELIVERED;
+        notification.deliveredAt = new Date();
+      }
+
+      await notification.save();
+      return notification;
+    } catch (error) {
+      this.logger.error(`Failed to send notification: ${error.message}`, error.stack);
+      notification.status = NotificationStatus.FAILED;
+      notification.errorMessage = error.message;
+      await notification.save();
+      throw error;
     }
+  }
 
-    /**
-     * Initialize notification channels
-     * In production, this would load configured channels (SMTP, SMS gateway, etc.)
-     */
-    private initializeChannels(): void {
-        // For now, use console logging as fallback
-        // In production, add actual email/SMS providers here
-        this.notificationChannels.push({
-            sendEmail: async (to: string, subject: string, body: string) => {
-                this.logger.log(`📧 EMAIL to ${to}: ${subject}`);
-                this.logger.debug(`Email body: ${body}`);
-                // TODO: Integrate with actual email service (e.g., SendGrid, AWS SES, Nodemailer)
-            },
-            sendSMS: async (to: string, message: string) => {
-                this.logger.log(`📱 SMS to ${to}: ${message}`);
-                // TODO: Integrate with actual SMS service (e.g., Twilio, AWS SNS)
-            },
-        });
-    }
+  /**
+   * Send leave request submitted notification
+   */
+  async notifyRequestSubmitted(
+    request: LeaveRequest,
+    managerId: Types.ObjectId,
+  ): Promise<void> {
+    const message = `New leave request submitted by employee ${request.employeeId} from ${request.startDate} to ${request.endDate}`;
+    
+    await this.sendNotification(
+      managerId,
+      NotificationType.REQUEST_SUBMITTED,
+      NotificationChannel.EMAIL,
+      'New Leave Request Submitted',
+      message,
+      request._id as Types.ObjectId,
+      { employeeId: request.employeeId.toString() },
+    );
+  }
 
-    /**
-     * Get employee contact information
-     */
-    private async getEmployeeContacts(employeeId: string): Promise<NotificationRecipient> {
-        try {
-            if (this.employeeProfileModel) {
-                const employee = await this.employeeProfileModel.findById(employeeId).exec();
-                if (employee) {
-                    return {
-                        email: employee.workEmail || (employee as any).personalEmail,
-                        phone: employee.mobilePhone || (employee as any).phoneNumber,
-                        name: `${employee.firstName} ${employee.lastName}`,
-                    };
-                }
-            }
-        } catch (error) {
-            this.logger.warn(`Could not fetch employee contacts for ${employeeId}: ${error.message}`);
-        }
-        return {};
-    }
+  /**
+   * Send leave request approved notification
+   */
+  async notifyRequestApproved(
+    request: LeaveRequest,
+    employeeId: Types.ObjectId,
+  ): Promise<void> {
+    const message = `Your leave request from ${request.startDate} to ${request.endDate} has been approved.`;
+    
+    await this.sendNotification(
+      employeeId,
+      NotificationType.REQUEST_APPROVED,
+      NotificationChannel.EMAIL,
+      'Leave Request Approved',
+      message,
+      request._id as Types.ObjectId,
+    );
+  }
 
-    /**
-     * Send notification via all available channels
-     */
-    private async sendNotification(
-        recipient: NotificationRecipient,
-        subject: string,
-        emailBody: string,
-        smsMessage?: string
-    ): Promise<void> {
-        const promises: Promise<void>[] = [];
+  /**
+   * Send leave request rejected notification
+   */
+  async notifyRequestRejected(
+    request: LeaveRequest,
+    employeeId: Types.ObjectId,
+    reason?: string,
+  ): Promise<void> {
+    const message = `Your leave request from ${request.startDate} to ${request.endDate} has been rejected.${reason ? ` Reason: ${reason}` : ''}`;
+    
+    await this.sendNotification(
+      employeeId,
+      NotificationType.REQUEST_REJECTED,
+      NotificationChannel.EMAIL,
+      'Leave Request Rejected',
+      message,
+      request._id as Types.ObjectId,
+      { reason },
+    );
+  }
 
-        // Send email if recipient has email
-        if (recipient.email) {
-            for (const channel of this.notificationChannels) {
-                promises.push(
-                    channel.sendEmail(recipient.email!, subject, emailBody).catch((error) => {
-                        this.logger.error(`Failed to send email to ${recipient.email}: ${error.message}`);
-                    })
-                );
-            }
-        }
+  /**
+   * Send year-end processing notification
+   */
+  async notifyYearEndProcessing(
+    employeeId: Types.ObjectId,
+    year: number,
+    summary: Record<string, any>,
+  ): Promise<void> {
+    const message = `Year-end leave processing completed for ${year}. Your leave balance has been updated.`;
+    
+    await this.sendNotification(
+      employeeId,
+      NotificationType.YEAR_END_PROCESSING,
+      NotificationChannel.EMAIL,
+      `Year-End Processing ${year}`,
+      message,
+      undefined,
+      { year, summary },
+    );
+  }
 
-        // Send SMS if recipient has phone and SMS message provided
-        if (recipient.phone && smsMessage) {
-            for (const channel of this.notificationChannels) {
-                promises.push(
-                    channel.sendSMS(recipient.phone!, smsMessage).catch((error) => {
-                        this.logger.error(`Failed to send SMS to ${recipient.phone}: ${error.message}`);
-                    })
-                );
-            }
-        }
-
-        await Promise.allSettled(promises);
-    }
-
-    /**
-     * Send leave request notification to manager
-     */
-    async sendLeaveRequestNotification(requestId: string): Promise<void> {
-        try {
-            // In a real implementation, fetch request and manager details
-            // For now, log the notification
-            this.logger.log(`Sending leave request notification for request ${requestId}`);
-            
-            // TODO: Fetch request details and manager ID from database
-            // const request = await this.leaveRequestModel.findById(requestId);
-            // const manager = await this.getEmployeeContacts(request.managerId);
-            // await this.sendNotification(
-            //     manager,
-            //     'New Leave Request Requires Your Review',
-            //     `You have a new leave request from ${employee.name} that requires your review.`,
-            //     `New leave request from ${employee.name} requires your review.`
-            // );
-        } catch (error) {
-            this.logger.error(`Failed to send leave request notification: ${error.message}`);
-        }
-    }
-
-    /**
-     * Send review notification to employee
-     */
-    async sendReviewNotification(requestId: string): Promise<void> {
-        try {
-            this.logger.log(`Sending review notification for request ${requestId}`);
-            
-            // TODO: Fetch request details and employee ID from database
-            // const request = await this.leaveRequestModel.findById(requestId);
-            // const employee = await this.getEmployeeContacts(request.employeeId);
-            // const status = request.status === LeaveStatus.APPROVED ? 'approved' : 'rejected';
-            // await this.sendNotification(
-            //     employee,
-            //     `Leave Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-            //     `Your leave request has been ${status}.`,
-            //     `Your leave request has been ${status}.`
-            // );
-        } catch (error) {
-            this.logger.error(`Failed to send review notification: ${error.message}`);
-        }
-    }
-
-    /**
-     * Send cancellation notification
-     */
-    async sendCancellationNotification(requestId: string): Promise<void> {
-        try {
-            this.logger.log(`Sending cancellation notification for request ${requestId}`);
-            
-            // TODO: Implement full notification with employee and manager details
-        } catch (error) {
-            this.logger.error(`Failed to send cancellation notification: ${error.message}`);
-        }
-    }
-
-    /**
-     * Send medical verification notification
-     */
-    async sendMedicalVerificationNotification(
-        employeeId: string,
-        status: string,
-        requestId: string
-    ): Promise<void> {
-        try {
-            const employee = await this.getEmployeeContacts(employeeId);
-            const statusText = status === 'APPROVED' ? 'approved' : 'rejected';
-            
-            await this.sendNotification(
-                employee,
-                `Medical Document Verification ${status}`,
-                `Your medical documents for leave request ${requestId} have been ${statusText}.`,
-                `Medical docs ${statusText} for request ${requestId}`
-            );
-        } catch (error) {
-            this.logger.error(`Failed to send medical verification notification: ${error.message}`);
-        }
-    }
-
-    /**
-     * Send escalation notification
-     */
-    async sendEscalationNotification(requestId: string, managerId?: string): Promise<void> {
-        try {
-            this.logger.log(
-                `Sending escalation notification for request ${requestId} to manager ${managerId || 'N/A'}`
-            );
-            
-            if (managerId) {
-                const manager = await this.getEmployeeContacts(managerId);
-                await this.sendNotification(
-                    manager,
-                    'Leave Request Escalation',
-                    `Leave request ${requestId} has been escalated and requires immediate attention.`,
-                    `Leave request ${requestId} escalated - requires attention`
-                );
-            }
-        } catch (error) {
-            this.logger.error(`Failed to send escalation notification: ${error.message}`);
-        }
-    }
-
-    /**
-     * Add a notification channel (for extensibility)
-     */
-    addChannel(channel: NotificationChannel): void {
-        this.notificationChannels.push(channel);
-    }
+  /**
+   * Get notification logs for a user
+   */
+  async getNotificationLogs(
+    recipientId: Types.ObjectId,
+    limit: number = 50,
+  ): Promise<LeaveNotification[]> {
+    return this.notificationModel
+      .find({ recipientId })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .exec();
+  }
 }
