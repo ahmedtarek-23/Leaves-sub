@@ -1,39 +1,94 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
-import { LeaveRequest } from './models/leave-request.schema';
-// Import all 8 schemas you registered in leaves.module.ts
-import { LeaveType } from './models/leave-type.schema';
-import { LeavePolicy } from './models/leave-policy.schema';
-import { LeaveEntitlement } from './models/leave-entitlement.schema';
-// ... import other model types (LeaveCategory, Calendar, etc.)
-
-// Import dependent services
-import { TimeManagementService } from '../time-management/time-management.service';
-import { EmployeeProfileService } from '../employee-profile/employee-profile.service'; 
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { LeavesController } from './leaves.controller';
+import { LeavesService } from './leaves.service';
 import { NotificationService } from './notifications/notification.service';
 
-// Note: Payroll dependency is likely needed, but we'll use the service injection you defined.
+// Import all schemas
+import {
+  LeaveRequest,
+  LeaveRequestSchema,
+} from './models/leave-request.schema';
+import { LeaveType, LeaveTypeSchema } from './models/leave-type.schema';
+import { LeaveCategory, LeaveCategorySchema } from './models/leave-category.schema';
+import { LeavePolicy, LeavePolicySchema } from './models/leave-policy.schema';
+import {
+  LeaveEntitlement,
+  LeaveEntitlementSchema,
+} from './models/leave-entitlement.schema';
+import {
+  LeaveAdjustment,
+  LeaveAdjustmentSchema,
+} from './models/leave-adjustment.schema';
+import { Calendar, CalendarSchema } from './models/calendar.schema';
+import { Attachment, AttachmentSchema } from './models/attachment.schema';
+import {
+  ManualAdjustmentLog,
+  ManualAdjustmentLogSchema,
+} from './models/manual-adjustment-log.schema';
+import {
+  LeaveEncashmentRecord,
+  LeaveEncashmentRecordSchema,
+} from './models/leave-encashment-record.schema';
+import {
+  LeaveDelegation,
+  LeaveDelegationSchema,
+} from './models/leave-delegation.schema';
+import {
+  LeaveAuditLog,
+  LeaveAuditLogSchema,
+} from './models/leave-audit-log.schema';
+import {
+  LeaveNotification,
+  LeaveNotificationSchema,
+} from './models/leave-notification.schema';
+import {
+  LeaveAccrual,
+  LeaveAccrualSchema,
+} from './models/leave-accrual.schema';
+import {
+  LeaveBalance,
+  LeaveBalanceSchema,
+} from './models/leave-balance.schema';
+import {
+  ResetPolicy,
+  ResetPolicySchema,
+} from './models/reset-policy.schema';
 
-@Injectable()
-export class LeavesService {
-  private readonly logger = new Logger(LeavesService.name);
+// Import dependent modules
+import { TimeManagementModule } from '../time-management/time-management.module';
+import { EmployeeProfileModule } from '../employee-profile/employee-profile.module';
+import { PayrollExecutionModule } from '../payroll-execution/payroll-execution.module';
 
-  constructor(
-    // 1. Inject all Mongoose Models using @InjectModel()
-    @InjectModel(LeaveRequest.name) private leaveRequestModel: Model<LeaveRequest>,
-    @InjectModel(LeaveType.name) private leaveTypeModel: Model<LeaveType>,
-    @InjectModel(LeavePolicy.name) private leavePolicyModel: Model<LeavePolicy>,
-    @InjectModel(LeaveEntitlement.name) private leaveEntitlementModel: Model<LeaveEntitlement>,
-    // Inject the remaining 4 models here...
-    
-    // 2. Inject dependent services (for M2 integration calls)
-    private readonly timeManagementService: TimeManagementService,
-    private readonly employeeProfileService: EmployeeProfileService,
-    private readonly notificationService: NotificationService, 
-    // Add Payroll Service injection here if you haven't yet
-    // private readonly payrollProcessingService: PayrollProcessingService,
-  ) {}
-
-  // ... Implement core methods below
-}
+@Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: LeaveRequest.name, schema: LeaveRequestSchema },
+      { name: LeaveType.name, schema: LeaveTypeSchema },
+      { name: LeaveCategory.name, schema: LeaveCategorySchema },
+      { name: LeavePolicy.name, schema: LeavePolicySchema },
+      { name: LeaveEntitlement.name, schema: LeaveEntitlementSchema },
+      { name: LeaveAdjustment.name, schema: LeaveAdjustmentSchema },
+      { name: Calendar.name, schema: CalendarSchema },
+      { name: Attachment.name, schema: AttachmentSchema },
+      { name: ManualAdjustmentLog.name, schema: ManualAdjustmentLogSchema },
+      {
+        name: LeaveEncashmentRecord.name,
+        schema: LeaveEncashmentRecordSchema,
+      },
+      { name: LeaveDelegation.name, schema: LeaveDelegationSchema },
+      { name: LeaveAuditLog.name, schema: LeaveAuditLogSchema },
+      { name: LeaveNotification.name, schema: LeaveNotificationSchema },
+      { name: LeaveAccrual.name, schema: LeaveAccrualSchema },
+      { name: LeaveBalance.name, schema: LeaveBalanceSchema },
+      { name: ResetPolicy.name, schema: ResetPolicySchema },
+    ]),
+    TimeManagementModule,
+    EmployeeProfileModule,
+    PayrollExecutionModule,
+  ],
+  controllers: [LeavesController],
+  providers: [LeavesService, NotificationService],
+  exports: [LeavesService],
+})
+export class LeavesModule {}

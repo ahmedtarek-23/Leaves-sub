@@ -1,16 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { AccrualMethod } from '../enums/accrual-method.enum';
 import { RoundingRule } from '../enums/rounding-rule.enum';
 
-export type LeavePolicyDocument = HydratedDocument<LeavePolicy>;
+export type LeavePolicyDocument = Document & LeavePolicy;
 
 @Schema({ timestamps: true })
-export class LeavePolicy {
+export class LeavePolicy extends Document {
+  declare _id: Types.ObjectId;
   @Prop({ type: Types.ObjectId, ref: 'LeaveType', required: true })
   leaveTypeId: Types.ObjectId;
 
-  @Prop({ enum: AccrualMethod, default: AccrualMethod.MONTHLY })
+  @Prop({ type: String, enum: AccrualMethod, default: AccrualMethod.MONTHLY })
   accrualMethod: AccrualMethod;
 
   @Prop({ default: 0 })
@@ -28,7 +29,7 @@ export class LeavePolicy {
   @Prop()
   expiryAfterMonths?: number;
 
-  @Prop({ enum: RoundingRule, default: RoundingRule.NONE })
+  @Prop({ type: String, enum: RoundingRule, default: RoundingRule.NONE })
   roundingRule: RoundingRule;
 
   @Prop({ default: 0 })
@@ -54,7 +55,6 @@ export class LeavePolicy {
 
   @Prop({ default: true })
   isActive: boolean;
-
 }
 
 export const LeavePolicySchema = SchemaFactory.createForClass(LeavePolicy);
