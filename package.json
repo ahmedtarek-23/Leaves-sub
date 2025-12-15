@@ -1,6 +1,9 @@
 {
   "devDependencies": {
-    "@types/mongoose": "^5.11.96"
+    "@types/mongoose": "^5.11.96",
+    "tailwindcss": "^3.0.0",
+    "postcss": "^8.0.0",
+    "autoprefixer": "^10.0.0"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",
