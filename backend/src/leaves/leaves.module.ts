@@ -1,30 +1,43 @@
 import { Module } from '@nestjs/common';
-import { LeavesController } from './leaves.controller';
-import { LeavesService } from './leaves.service';
 import { MongooseModule } from '@nestjs/mongoose';
+
+/* ----------  Leave  ---------- */
 import { LeaveType, LeaveTypeSchema } from './models/leave-type.schema';
-import { LeaveRequest, LeaveRequestSchema } from './models/leave-request.schema';
 import { LeavePolicy, LeavePolicySchema } from './models/leave-policy.schema';
 import { LeaveEntitlement, LeaveEntitlementSchema } from './models/leave-entitlement.schema';
-import { LeaveCategory, LeaveCategorySchema } from './models/leave-category.schema';
+import { LeaveRequest, LeaveRequestSchema } from './models/leave-request.schema';
 import { LeaveAdjustment, LeaveAdjustmentSchema } from './models/leave-adjustment.schema';
-import { Calendar, CalendarSchema} from './models/calendar.schema';
-import { Attachment,AttachmentSchema } from './models/attachment.schema';
-import { EmployeeProfileModule } from '../employee-profile/employee-profile.module';
-import { TimeManagementModule } from '../time-management/time-management.module';
+import { LeaveCategory, LeaveCategorySchema } from './models/leave-category.schema';
+import { Calendar, CalendarSchema } from './models/calendar.schema';
+import { ScheduleModule } from '@nestjs/schedule'; // ← 1
+import { LeavesScheduler } from './leaves.schedular'; // ← 2
+import { LeavesNotifications } from './leaves.notifications';
+
+/* ----------  Employee / Org  (stubs) ---------- */
+import { EmployeeProfile, EmployeeProfileSchema } from '../employee-profile/models/employee-profile.schema';
+import { Department, DepartmentSchema } from '../organization-structure/models/department.schema';
+
+/* ----------  Controllers / Services  ---------- */
+import { LeaveController } from './leaves.controller';
+import { LeaveService } from './leaves.service';
 
 @Module({
-  imports:[MongooseModule.forFeature([{name:LeaveType.name,schema:LeaveTypeSchema},
-    {name:LeaveRequest.name, schema: LeaveRequestSchema},
-    {name:LeavePolicy.name, schema:LeavePolicySchema},
-    {name:LeaveEntitlement.name, schema:LeaveEntitlementSchema},
-    {name: LeaveCategory.name, schema:LeaveCategorySchema},
-    {name: LeaveAdjustment.name, schema:LeaveAdjustmentSchema},
-    {name:Calendar.name, schema:CalendarSchema},
-    {name:Attachment.name, schema: AttachmentSchema}
-  ]),EmployeeProfileModule,TimeManagementModule],
-  controllers: [LeavesController],
-  providers: [LeavesService],
-  exports:[LeavesService]
+  imports: [
+    ScheduleModule.forRoot(), // ← 1
+    MongooseModule.forFeature([
+      { name: LeaveType.name, schema: LeaveTypeSchema },
+      { name: LeavePolicy.name, schema: LeavePolicySchema },
+      { name: LeaveEntitlement.name, schema: LeaveEntitlementSchema },
+      { name: LeaveRequest.name, schema: LeaveRequestSchema },
+      { name: LeaveAdjustment.name, schema: LeaveAdjustmentSchema },
+      { name: LeaveCategory.name, schema: LeaveCategorySchema },
+      { name: Calendar.name, schema: CalendarSchema },
+      { name: EmployeeProfile.name, schema: EmployeeProfileSchema },
+      { name: Department.name, schema: DepartmentSchema },
+    ]),
+  ],
+  controllers: [LeaveController],
+  providers: [LeaveService,LeavesScheduler,LeavesNotifications],
+  exports: [LeaveService],
 })
 export class LeavesModule {}
