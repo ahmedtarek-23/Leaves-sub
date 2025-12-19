@@ -45,6 +45,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/profile", label: "Profile overview" },
       { href: "/profile/requests", label: "Change requests" },
+      { href: "/leaves/dashboard", label: "My leaves" },
     ],
   },
   {
@@ -53,6 +54,7 @@ const navSections: NavSection[] = [
       { href: "/manager/team", label: "My team" },
       { href: "/manager/team/org-tree", label: "Org Tree" },
       { href: "/manager/team/structure-requests", label: "Structure Requests" },
+      { href: "/leaves/manager", label: "Team leaves" },
     ],
     requiredRoles: ["department head", "HR Manager", "HR Admin", "System Admin"],
   },
@@ -62,10 +64,11 @@ const navSections: NavSection[] = [
       { href: "/admin/employees", label: "Employees" },
       { href: "/admin/requests", label: "Profile change requests" },
       { href: "/admin/org-structure", label: "Org structure" },
+      { href: "/leaves/admin", label: "Leave configuration" },
     ],
     requiredRoles: ["HR Admin", "System Admin"],
   },
-    {
+  {
     label: "Your Performance",
     items: [
       { href: "/performance", label: "My performance" },
@@ -83,7 +86,7 @@ const navSections: NavSection[] = [
       { href: "/performance/disputes", label: "Disputes" },
       { href: "/performance/dashboard", label: "Dashboard" },
     ],
-    requiredRoles: ["HR Manager"], 
+    requiredRoles: ["HR Manager"],
   },
   {
     label: "Performance",
@@ -100,14 +103,14 @@ const navSections: NavSection[] = [
   {
     label: "Conduct Apprasials",
     items: [{ href: "/performance/conduct", label: "Appraise my team" }],
-    requiredRoles: ["department head"], 
+    requiredRoles: ["department head"],
   },
-    {
+  {
     label: "History Archives",
     items: [{ href: "/performance/history", label: "View archived records" }],
-    requiredRoles: ["System Admin"], 
+    requiredRoles: ["System Admin"],
   },
-  
+
   {
 
     label: "Payroll Configuration",
