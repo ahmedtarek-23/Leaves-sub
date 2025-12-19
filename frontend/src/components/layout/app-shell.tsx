@@ -98,6 +98,13 @@ const navSections: NavSection[] = [
     items: [{ href: "/performance/assignments", label: "Appraise my team" }],
     requiredRoles: ["department head"], // ← only this role
   },
+  {
+    label: "Payroll Configuration",
+    items: [
+      { href: "/payroll-config", label: "Dashboard" },
+    ],
+    requiredRoles: ["Payroll Manager", "Payroll Specialist", "HR Admin", "HR Manager", "System Admin"],
+  },
 ];
 
 export function AppShell({
