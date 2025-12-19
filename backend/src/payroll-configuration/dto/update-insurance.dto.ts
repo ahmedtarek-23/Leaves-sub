@@ -9,11 +9,6 @@ export class UpdateInsuranceDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
-  amount?: number;
-
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
   minSalary?: number;
 
   @IsNumber()

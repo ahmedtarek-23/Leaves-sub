@@ -8,7 +8,7 @@ import { EmployeeProfileService } from '../employee-profile/employee-profile.ser
 // Service and DTOs
 import { PayrollConfigurationService } from './payroll-configuration.service';
 import { ConfigStatus, PolicyType, Applicability } from './enums/payroll-configuration-enums';
-import { UserRole } from '../auth/authorization/constants/roles.constant';
+import { UserRole } from '../auth/permissions.constant';
 
 // DTOs
 import { CreateCompanySettingsDto } from './dto/create-company-settings.dto';

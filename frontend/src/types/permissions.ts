@@ -60,8 +60,10 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.HR_ADMIN]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_ALL_PROFILES,
     Permission.VIEW_ORG_STRUCTURE,
+     Permission.CONDUCT_APPRAISALS,
     // Permission.MANAGE_APPRAISALS,
     // Permission.VIEW_APPRAISAL_DASHBOARD,
     // Permission.VIEW_OWN_APPRAISAL,
@@ -85,37 +87,47 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.PAYROLL_SPECIALIST]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_PAYROLL,
     Permission.VIEW_TEAM_ATTENDANCE,
     Permission.APPROVE_PAYROLL,
     Permission.VIEW_ORG_STRUCTURE,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.PAYROLL_MANAGER]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_PAYROLL,
     Permission.APPROVE_PAYROLL,
     Permission.VIEW_TEAM_ATTENDANCE,
     Permission.VIEW_ORG_STRUCTURE,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.FINANCE_STAFF]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.APPROVE_PAYROLL,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.LEGAL_POLICY_ADMIN]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_PAYROLL, // For tax/legal config
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.RECRUITER]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_RECRUITMENT,
     Permission.VIEW_APPLICATIONS,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.DEPARTMENT_HEAD]: [
     Permission.VIEW_TEAM_PROFILES,
     Permission.EDIT_OWN_PROFILE,  
     Permission.VIEW_OWN_APPRAISAL,
-        Permission.MANAGE_APPRAISALS,
+    Permission.MANAGE_APPRAISALS,
 
     Permission.CONDUCT_APPRAISALS,
     Permission.VIEW_TEAM_ATTENDANCE,
@@ -135,7 +147,9 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.JOB_CANDIDATE]: [
-    Permission.VIEW_APPLICATIONS, // View own application
+    Permission.EDIT_OWN_PROFILE,
+    Permission.VIEW_APPLICATIONS,
+     Permission.CONDUCT_APPRAISALS,
   ],
 };
 

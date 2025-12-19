@@ -107,7 +107,15 @@ const navSections: NavSection[] = [
     items: [{ href: "/performance/history", label: "View archived records" }],
     requiredRoles: ["System Admin"], 
   },
+  
+  {
 
+    label: "Payroll Configuration",
+    items: [
+      { href: "/payroll-config", label: "Dashboard" },
+    ],
+    requiredRoles: ["Payroll Manager", "Payroll Specialist", "HR Admin", "HR Manager", "System Admin"],
+  },
 ];
 
 export function AppShell({

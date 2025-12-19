@@ -63,11 +63,7 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   [SystemRole.HR_ADMIN]: [
     Permission.MANAGE_ALL_PROFILES,
     Permission.VIEW_ORG_STRUCTURE,
-    // Permission.MANAGE_APPRAISALS,
-    // Permission.VIEW_APPRAISAL_DASHBOARD,
-    // Permission.VIEW_OWN_APPRAISAL,
-    // Permission.EXPORT_APPRAISAL_REPORTS,
-    // Permission.RESOLVE_DISPUTE,
+    Permission.CONDUCT_APPRAISALS,
     Permission.MANAGE_ATTENDANCE,
     Permission.MANAGE_LEAVES,
     Permission.EDIT_OWN_PROFILE,
@@ -85,13 +81,17 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.PAYROLL_SPECIALIST]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_PAYROLL,
     Permission.VIEW_TEAM_ATTENDANCE,
     Permission.APPROVE_PAYROLL,
     Permission.VIEW_ORG_STRUCTURE,
+    Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.PAYROLL_MANAGER]: [
+    Permission.EDIT_OWN_PROFILE,
+    Permission.CONDUCT_APPRAISALS,
     Permission.MANAGE_PAYROLL,
     Permission.APPROVE_PAYROLL,
     Permission.VIEW_TEAM_ATTENDANCE,
@@ -99,16 +99,24 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.FINANCE_STAFF]: [
+    Permission.CONDUCT_APPRAISALS,
+    Permission.EDIT_OWN_PROFILE,
     Permission.APPROVE_PAYROLL,
+    Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.LEGAL_POLICY_ADMIN]: [
-    Permission.MANAGE_PAYROLL, // For tax/legal config
+    Permission.CONDUCT_APPRAISALS,
+    Permission.EDIT_OWN_PROFILE,
+    Permission.MANAGE_PAYROLL,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.RECRUITER]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.MANAGE_RECRUITMENT,
     Permission.VIEW_APPLICATIONS,
+     Permission.CONDUCT_APPRAISALS,
   ],
 
   [SystemRole.DEPARTMENT_HEAD]: [
@@ -133,7 +141,9 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
   ],
 
   [SystemRole.JOB_CANDIDATE]: [
+    Permission.EDIT_OWN_PROFILE,
     Permission.VIEW_APPLICATIONS, // View own application
+     Permission.CONDUCT_APPRAISALS,
   ],
 };
 
