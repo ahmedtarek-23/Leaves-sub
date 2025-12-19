@@ -48,6 +48,7 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.EDIT_OWN_PROFILE,
     Permission.VIEW_ORG_STRUCTURE,
     Permission.MANAGE_APPRAISALS,
+    Permission.CONDUCT_APPRAISALS,
     Permission.VIEW_OWN_APPRAISAL, // ← add this
     Permission.VIEW_APPRAISAL_DASHBOARD,
     Permission.EXPORT_APPRAISAL_REPORTS,
@@ -77,7 +78,8 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.MANAGE_ALL_PROFILES,
     Permission.VIEW_ORG_STRUCTURE,
     Permission.VIEW_APPLICATIONS,
-    Permission.VIEW_OWN_APPRAISAL, // ← add this
+    Permission.VIEW_OWN_APPRAISAL,
+    Permission.CONDUCT_APPRAISALS,
     Permission.MANAGE_APPRAISALS,              
     Permission.VIEW_APPRAISAL_DASHBOARD,       
   ],
@@ -113,6 +115,8 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.VIEW_TEAM_PROFILES,
     Permission.EDIT_OWN_PROFILE,  
     Permission.VIEW_OWN_APPRAISAL,
+        Permission.MANAGE_APPRAISALS,
+
     Permission.CONDUCT_APPRAISALS,
     Permission.VIEW_TEAM_ATTENDANCE,
     Permission.APPROVE_LEAVES,
@@ -122,6 +126,8 @@ export const ROLE_PERMISSIONS: Record<SystemRole, Permission[]> = {
     Permission.EDIT_OWN_PROFILE,
     Permission.VIEW_ORG_STRUCTURE,
     Permission.VIEW_OWN_APPRAISAL,
+    Permission.CONDUCT_APPRAISALS,
+    Permission.RESOLVE_DISPUTE,
     Permission.RAISE_DISPUTE,
     Permission.CLOCK_IN_OUT,
     Permission.REQUEST_LEAVE,
