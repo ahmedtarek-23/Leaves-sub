@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, ValidateNested, IsNumber, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDate, ValidateNested, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PolicyType, Applicability } from '../enums/payroll-configuration-enums';
 
@@ -34,7 +34,8 @@ export class UpdatePayrollPoliciesDto {
   @IsOptional()
   description?: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsOptional()
   effectiveDate?: Date;
 

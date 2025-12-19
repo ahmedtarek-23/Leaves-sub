@@ -67,7 +67,28 @@ export class PayrollConfigurationService {
   // GENERAL HELPERS
   // ===========================================================================
 
-  private async approveGeneric(model: Model<any>, id: string, dto: ChangeStatusDto, user: AuthUser) {
+  // Configuration for restricted config types
+  private readonly RESTRICTED_CONFIGS = {
+    insurance: {
+      allowedRoles: [UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN],
+      message: 'Insurance brackets can only be managed by HR Manager or System Admin'
+    }
+  };
+
+  /**
+   * Validates if a user has access to a restricted configuration type
+   * @param configType - The type of configuration being accessed
+   * @param user - The authenticated user
+   * @throws ForbiddenException if user doesn't have access
+   */
+  private validateRestrictedAccess(configType: string, user: AuthUser): void {
+    const restriction = this.RESTRICTED_CONFIGS[configType];
+    if (restriction && !restriction.allowedRoles.includes(user.role)) {
+      throw new ForbiddenException(restriction.message);
+    }
+  }
+
+  private async approveGeneric(model: Model<any>, id: string, dto: ChangeStatusDto, user: AuthUser, configType?: string) {
     const record = await model.findById(id);
     if (!record) throw new NotFoundException('Record not found');
 
@@ -77,9 +98,15 @@ export class PayrollConfigurationService {
 
     // Role Check: Only Managers/Admins can Approve
     if (dto.status === ConfigStatus.APPROVED) {
-      const allowedRoles = [UserRole.PAYROLL_SPECIALIST, UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN];
-      if (!allowedRoles.includes(user.role)) {
-        throw new ForbiddenException('Only Managers can approve configurations');
+      // Check if this config type has restricted access
+      if (configType) {
+        this.validateRestrictedAccess(configType, user);
+      } else {
+        // Default approval roles for non-restricted configs
+        const allowedRoles = [UserRole.PAYROLL_MANAGER, UserRole.HR_MANAGER, UserRole.SYSTEM_ADMIN];
+        if (!allowedRoles.includes(user.role)) {
+          throw new ForbiddenException('Only Managers can approve configurations');
+        }
       }
 
       // Capture the approver's ID from the JWT token
@@ -169,6 +196,14 @@ export class PayrollConfigurationService {
 
   async getPayGrades() { return this.payGradeModel.find().exec(); }
 
+  async getPayGradeById(id: string) {
+    const payGrade = await this.payGradeModel.findById(id).exec();
+    if (!payGrade) {
+      throw new NotFoundException(`Pay Grade with ID ${id} not found`);
+    }
+    return payGrade;
+  }
+
   async changePayGradeStatus(id: string, dto: ChangeStatusDto, user: AuthUser) {
     return this.approveGeneric(this.payGradeModel, id, dto, user);
   }
@@ -205,6 +240,14 @@ export class PayrollConfigurationService {
 
   async getPayrollPolicies() {
     return this.payrollPoliciesModel.find().exec();
+  }
+
+  async getPayrollPolicyById(id: string) {
+    const policy = await this.payrollPoliciesModel.findById(id).exec();
+    if (!policy) {
+      throw new NotFoundException(`Payroll Policy with ID ${id} not found`);
+    }
+    return policy;
   }
 
   async changePayrollPolicyStatus(id: string, dto: ChangeStatusDto, user: AuthUser) {
@@ -247,6 +290,14 @@ export class PayrollConfigurationService {
 
   async getTaxRules() { return this.taxRulesModel.find().exec(); }
 
+  async getTaxRuleById(id: string) {
+    const taxRule = await this.taxRulesModel.findById(id).exec();
+    if (!taxRule) {
+      throw new NotFoundException(`Tax Rule with ID ${id} not found`);
+    }
+    return taxRule;
+  }
+
   async deleteTaxRule(id: string, user: AuthUser) {
     const record = await this.taxRulesModel.findById(id);
     if (!record) throw new NotFoundException('Tax Rule not found');
@@ -263,6 +314,8 @@ export class PayrollConfigurationService {
   // ===========================================================================
 
   async createInsurance(dto: CreateInsuranceDto, user: AuthUser): Promise<insuranceBrackets> {
+    this.validateRestrictedAccess('insurance', user);
+
     if (dto.minSalary >= dto.maxSalary) {
       throw new BadRequestException('Min Salary must be less than Max Salary');
     }
@@ -274,6 +327,8 @@ export class PayrollConfigurationService {
   }
 
   async updateInsurance(id: string, dto: UpdateInsuranceDto, user: AuthUser): Promise<insuranceBrackets> {
+    this.validateRestrictedAccess('insurance', user);
+
     const record = await this.checkDraftStatus(this.insuranceModel, id);
 
     // Validate min < max if both are present or merged
@@ -289,10 +344,14 @@ export class PayrollConfigurationService {
   }
 
   async approveInsurance(id: string, dto: ChangeStatusDto, user: AuthUser) {
-    return this.approveGeneric(this.insuranceModel, id, dto, user);
+    return this.approveGeneric(this.insuranceModel, id, dto, user, 'insurance');
   }
 
   async getInsuranceBrackets() { return this.insuranceModel.find().exec(); }
+
+  async getInsuranceById(id: string) {
+    return this.insuranceModel.findById(id).exec();
+  }
 
   // ===========================================================================
   // 6. Allowances (REQ-PY-7)
@@ -318,6 +377,14 @@ export class PayrollConfigurationService {
   }
 
   async getAllowances() { return this.allowanceModel.find().exec(); }
+
+  async getAllowanceById(id: string) {
+    const allowance = await this.allowanceModel.findById(id).exec();
+    if (!allowance) {
+      throw new NotFoundException(`Allowance with ID ${id} not found`);
+    }
+    return allowance;
+  }
 
   async deleteAllowance(id: string, user: AuthUser) {
     const record = await this.allowanceModel.findById(id);
@@ -351,6 +418,14 @@ export class PayrollConfigurationService {
 
   async getPayTypes() {
     return this.payTypeModel.find().exec();
+  }
+
+  async getPayTypeById(id: string) {
+    const payType = await this.payTypeModel.findById(id).exec();
+    if (!payType) {
+      throw new NotFoundException(`Pay Type with ID ${id} not found`);
+    }
+    return payType;
   }
 
   async approvePayType(id: string, dto: ChangeStatusDto, user: AuthUser) {
@@ -402,6 +477,14 @@ export class PayrollConfigurationService {
     return this.bonusModel.find().exec();
   }
 
+  async getSigningBonusById(id: string) {
+    const signingBonus = await this.bonusModel.findById(id).exec();
+    if (!signingBonus) {
+      throw new NotFoundException(`Signing Bonus with ID ${id} not found`);
+    }
+    return signingBonus;
+  }
+
   async approveSigningBonus(id: string, dto: ChangeStatusDto, user: AuthUser) {
     return this.approveGeneric(this.bonusModel, id, dto, user);
   }
@@ -438,6 +521,14 @@ export class PayrollConfigurationService {
 
   async getTerminationBenefits() {
     return this.termModel.find().exec();
+  }
+
+  async getTerminationBenefitById(id: string) {
+    const terminationBenefit = await this.termModel.findById(id).exec();
+    if (!terminationBenefit) {
+      throw new NotFoundException(`Termination Benefit with ID ${id} not found`);
+    }
+    return terminationBenefit;
   }
 
   async approveTerminationBenefit(id: string, dto: ChangeStatusDto, user: AuthUser) {

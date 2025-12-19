@@ -6,6 +6,7 @@ import { Request } from 'express';
 import { Permissions } from '../auth/decorators/roles.decorators';
 import { Permission } from '../auth/permissions.constant';
 import { AuthUser } from '../auth/auth-user.interface';
+import { Public } from '../auth/decorators/roles.decorators';
 
 // --- DTOs (Create & Update) ---
 import { CreateAllowanceDto } from './dto/create-allowance.dto';
@@ -58,7 +59,7 @@ export class PayrollConfigurationController {
   }
   
   @Get('settings')
-  @Permissions(Permission.MANAGE_PAYROLL, Permission.APPROVE_PAYROLL)
+  @Permissions(Permission.MANAGE_PAYROLL)
   getSettings() { return this.configService.getSettings(); }
 
 
@@ -79,7 +80,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('pay-grades')
+  @Public()
   getPayGrades() { return this.configService.getPayGrades(); }
+
+  @Get('pay-grades/:id')
+  @Public()
+  getPayGradeById(@Param('id') id: string) {
+    return this.configService.getPayGradeById(id);
+  }
   
   @Patch('pay-grades/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL, Permission.APPROVE_PAYROLL)
@@ -111,7 +119,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('policies')
+  @Public()
   getPayrollPolicies() { return this.configService.getPayrollPolicies(); }
+
+  @Get('policies/:id')
+  @Public()
+  getPayrollPolicyById(@Param('id') id: string) {
+    return this.configService.getPayrollPolicyById(id);
+  }
   
   @Patch('policies/:id/status')
   @Permissions(Permission.APPROVE_PAYROLL) // Higher approval for core policies
@@ -142,7 +157,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('tax-rules')
+  @Public()
   getTaxRules() { return this.configService.getTaxRules(); }
+
+  @Get('tax-rules/:id')
+  @Public()
+  getTaxRuleById(@Param('id') id: string) {
+    return this.configService.getTaxRuleById(id);
+  }
 
   @Patch('tax-rules/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL)
@@ -172,11 +194,18 @@ export class PayrollConfigurationController {
     return this.configService.updateInsurance(id, dto, req.user);
   }
 
+  @Get('insurance/:id')
+  @Public()
+  getInsuranceById(@Param('id') id: string) {
+    return this.configService.getInsuranceById(id);
+  }
+
   @Get('insurance')
+  @Public()
   getInsurance() { return this.configService.getInsuranceBrackets(); }
 
   @Patch('insurance/:id/status')
-  @Permissions(Permission.MANAGE_PAYROLL)
+  @Permissions(Permission.APPROVE_PAYROLL)  // Higher approval required for insurance (financial/legal sensitivity)
   changeInsuranceStatus(@Param('id') id: string, @Body() dto: ChangeStatusDto, @Req() req: Request & { user: AuthUser }) {
     return this.configService.approveInsurance(id, dto, req.user);
   }
@@ -199,7 +228,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('allowances')
+  @Public()
   getAllowances() { return this.configService.getAllowances(); }
+
+  @Get('allowances/:id')
+  @Public()
+  getAllowanceById(@Param('id') id: string) {
+    return this.configService.getAllowanceById(id);
+  }
 
   @Patch('allowances/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL)
@@ -230,7 +266,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('pay-types')
+  @Public()
   getPayTypes() { return this.configService.getPayTypes(); }
+
+  @Get('pay-types/:id')
+  @Public()
+  getPayTypeById(@Param('id') id: string) {
+    return this.configService.getPayTypeById(id);
+  }
 
   @Patch('pay-types/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL)
@@ -261,7 +304,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('signing-bonuses')
+  @Public()
   getSigningBonuses() { return this.configService.getSigningBonuses(); }
+
+  @Get('signing-bonuses/:id')
+  @Public()
+  getSigningBonusById(@Param('id') id: string) {
+    return this.configService.getSigningBonusById(id);
+  }
 
   @Patch('signing-bonuses/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL)
@@ -292,7 +342,14 @@ export class PayrollConfigurationController {
   }
 
   @Get('termination-benefits')
+  @Public()
   getTerminationBenefits() { return this.configService.getTerminationBenefits(); }
+
+  @Get('termination-benefits/:id')
+  @Public()
+  getTerminationBenefitById(@Param('id') id: string) {
+    return this.configService.getTerminationBenefitById(id);
+  }
   
   @Patch('termination-benefits/:id/status')
   @Permissions(Permission.MANAGE_PAYROLL)

@@ -8,10 +8,6 @@ export class CreateInsuranceDto {
 
   @IsNumber()
   @Min(0)
-  amount: number;
-
-  @IsNumber()
-  @Min(0)
   minSalary: number;
 
   @IsNumber()

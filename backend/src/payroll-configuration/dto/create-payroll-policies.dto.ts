@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsDateString, ValidateNested, IsNumber, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsDate, ValidateNested, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PolicyType, Applicability } from '../enums/payroll-configuration-enums';
 
@@ -34,7 +34,8 @@ export class CreatePayrollPoliciesDto {
   @IsNotEmpty()
   description: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsNotEmpty()
   effectiveDate: Date;
 
