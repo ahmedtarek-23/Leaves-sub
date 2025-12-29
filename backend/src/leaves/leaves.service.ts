@@ -26,6 +26,8 @@ import {
   CreateLeaveRequestDto,
   UpdateLeaveRequestDto,
   ApproveRejectDto,
+  ManagerApprovalDto,
+  HrApprovalDto,
   HrFinalizeDto,
   ListRequestsFilterDto,
 } from './dto';
@@ -50,14 +52,19 @@ export class LeaveService {
      1. POLICY SET-UP
      ========================================================= */
 
+  async listCategories() {
+    return this.catModel.find();
+  }
+
   async createLeaveType(dto: CreateLeaveTypeDto) {
+    console.log('Creating LeaveType with DTO:', dto);
     const cat = await this.catModel.findById(dto.categoryId);
     if (!cat) throw new NotFoundException('LeaveCategory not found');
     return this.ltModel.create(dto);
   }
 
   async listLeaveTypes() {
-    return this.ltModel.find().populate('categoryId');
+    return this.ltModel.find();
   }
 
   async updateLeaveType(id: string, dto: UpdateLeaveTypeDto) {
@@ -77,30 +84,53 @@ export class LeaveService {
   }
 
   async createEntitlement(dto: CreateEntitlementDto) {
+    const empObjId = typeof dto.employeeId === 'string' ? new Types.ObjectId(dto.employeeId) : dto.employeeId;
+    const ltObjId = typeof dto.leaveTypeId === 'string' ? new Types.ObjectId(dto.leaveTypeId) : dto.leaveTypeId;
     const exists = await this.entModel.findOne({
-      employeeId: dto.employeeId,
-      leaveTypeId: dto.leaveTypeId,
+      employeeId: empObjId,
+      leaveTypeId: ltObjId,
     });
     if (exists) throw new BadRequestException('Entitlement already exists');
     return this.entModel.create(dto);
   }
 
   async getEntitlement(employeeId: string) {
-    return this.entModel.find({ employeeId }).populate('leaveTypeId');
+    return this.entModel.find({ employeeId: new Types.ObjectId(employeeId) }).populate('leaveTypeId');
+  }
+
+  async listEntitlements() {
+    return this.entModel.find().populate('leaveTypeId').populate('employeeId');
+  }
+
+  async updateEntitlement(id: string, dto: Partial<CreateEntitlementDto>) {
+    return this.entModel.findByIdAndUpdate(id, dto, { new: true }).populate('leaveTypeId').populate('employeeId');
   }
 
   async manualAdjust(employeeId: string, dto: AdjustBalanceDto, hrUserId: string) {
-    const ent = await this.entModel.findOne({
-      employeeId,
-      leaveTypeId: dto.leaveTypeId,
+    const empObjId = new Types.ObjectId(employeeId);
+    const ltObjId = new Types.ObjectId(dto.leaveTypeId);
+    let ent = await this.entModel.findOne({
+      employeeId: empObjId,
+      leaveTypeId: ltObjId,
     });
-    if (!ent) throw new NotFoundException('Entitlement not found');
+    
+    // Create entitlement if it doesn't exist
+    if (!ent) {
+      ent = await this.entModel.create({
+        employeeId: empObjId,
+        leaveTypeId: ltObjId,
+        entitled: 0,
+        remaining: 0,
+      });
+    }
+    
     const delta = dto.adjustmentType === AdjustmentType.ADD ? dto.amount : -dto.amount;
     ent.remaining += delta;
     await ent.save();
+    
     await this.adjModel.create({
-      employeeId,
-      leaveTypeId: dto.leaveTypeId,
+      employeeId: empObjId,
+      leaveTypeId: ltObjId,
       adjustmentType: dto.adjustmentType,
       amount: dto.amount,
       reason: dto.reason,
@@ -117,49 +147,104 @@ export class LeaveService {
     );
   }
 
+  async getCalendar(year: number) {
+    const calendar = await this.calModel.findOne({ year });
+    if (!calendar) {
+      return { year, holidays: [], blockedPeriods: [] };
+    }
+    return {
+      year: calendar.year,
+      holidays: (calendar.holidays || []).map((d: any) => (d as Date).toISOString().split('T')[0]),
+      blockedPeriods: (calendar.blockedPeriods || []).map((p: any) => ({
+        from: (p.from as Date).toISOString().split('T')[0],
+        to: (p.to as Date).toISOString().split('T')[0],
+        reason: p.reason,
+      })),
+    };
+  }
+
   /* =========================================================
      2. REQUEST WORKFLOW
      ========================================================= */
 
   private async calculateDuration(from: Date, to: Date): Promise<number> {
-    const cal = await this.calModel.findOne({ year: from.getFullYear() });
+    // Ensure from and to are Date objects
+    const fromDate = from instanceof Date ? from : new Date(from);
+    const toDate = to instanceof Date ? to : new Date(to);
+    
+    const cal = await this.calModel.findOne({ year: fromDate.getFullYear() });
     const holidays = (cal?.holidays || []).map((d: any) => (d as Date).toISOString().split('T')[0]);
     let count = 0;
-    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-      const day = d.getDay();
-      if (day === 0 || day === 6) continue;
-      if (holidays.includes(d.toISOString().split('T')[0])) continue;
-      count++;
+    
+    const current = new Date(fromDate);
+    while (current <= toDate) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) { // Not Saturday or Sunday
+        if (!holidays.includes(current.toISOString().split('T')[0])) {
+          count++;
+        }
+      }
+      current.setDate(current.getDate() + 1);
     }
     return count;
   }
 
   async submitRequest(dto: CreateLeaveRequestDto, employeeId: string) {
-    const emp = await this.empModel.findById(employeeId);
-    if (!emp) throw new NotFoundException('Employee not found');
-    const leaveType = await this.ltModel.findById(dto.leaveTypeId);
-    if (!leaveType) throw new NotFoundException('LeaveType not found');
-    const durationDays = await this.calculateDuration(dto.dates.from, dto.dates.to);
-    const entitlement = await this.entModel.findOne({ employeeId, leaveTypeId: dto.leaveTypeId });
-    if (!entitlement) throw new BadRequestException('No entitlement for this leave type');
-    if (entitlement.remaining < durationDays && leaveType.deductible) {
-      throw new BadRequestException('Insufficient balance');
-    }
-    const overlap = await this.lrModel.findOne({
-      employeeId,
-      status: LeaveStatus.APPROVED,
-      $or: [{ 'dates.from': { $lte: dto.dates.to }, 'dates.to': { $gte: dto.dates.from } }],
-    });
-    if (overlap) throw new BadRequestException('Overlapping approved leave');
-    const req = await this.lrModel.create({ ...dto, employeeId, durationDays });
+    try {
+      const emp = await this.empModel.findById(employeeId);
+      if (!emp) throw new NotFoundException('Employee not found');
+      
+      const leaveType = await this.ltModel.findById(dto.leaveTypeId);
+      if (!leaveType) throw new NotFoundException('LeaveType not found');
+      
+      const durationDays = await this.calculateDuration(dto.dates.from, dto.dates.to);
+      
+      // Convert to ObjectId for matching with database documents
+      const employeeObjectId = new Types.ObjectId(employeeId);
+      const leaveTypeObjectId = new Types.ObjectId(dto.leaveTypeId);
+      
+      const entitlement = await this.entModel.findOne({ employeeId: employeeObjectId, leaveTypeId: leaveTypeObjectId });
+      if (!entitlement) throw new BadRequestException('No entitlement for this leave type');
+      
+      if (entitlement.remaining < durationDays && leaveType.deductible) {
+        throw new BadRequestException('Insufficient balance');
+      }
+      
+      const overlap = await this.lrModel.findOne({
+        employeeId,
+        status: LeaveStatus.APPROVED,
+        $or: [{ 'dates.from': { $lte: dto.dates.to }, 'dates.to': { $gte: dto.dates.from } }],
+      });
+      if (overlap) throw new BadRequestException('Overlapping approved leave');
+      
+      const reqData = {
+        employeeId,
+        leaveTypeId: dto.leaveTypeId,
+        dates: {
+          from: dto.dates.from instanceof Date ? dto.dates.from : new Date(dto.dates.from),
+          to: dto.dates.to instanceof Date ? dto.dates.to : new Date(dto.dates.to),
+        },
+        durationDays,
+        justification: dto.justification,
+        attachmentId: dto.attachmentId,
+      };
+      
+      const req = await this.lrModel.create(reqData);
 
-    const dept = await this.deptModel.findById(emp.primaryDepartmentId);
-    const manager = dept ? await this.empModel.findById((dept as any).headId) : null;
-await this.notifier.requestSubmitted(
-  req,
-  emp.workEmail ?? '',
-  manager?.workEmail ?? '',
-);    return req;
+      const dept = await this.deptModel.findById(emp.primaryDepartmentId);
+      const manager = dept && dept.headPositionId ? await this.empModel.findOne({ primaryPositionId: dept.headPositionId }) : null;
+      
+      await this.notifier.requestSubmitted(
+        req,
+        emp.workEmail ?? '',
+        manager?.workEmail ?? '',
+      );
+      
+      return req;
+    } catch (error) {
+      console.error('Error in submitRequest:', error);
+      throw error;
+    }
   }
 
   async modifyRequest(id: string, dto: UpdateLeaveRequestDto, userId: string) {
@@ -183,10 +268,10 @@ await this.notifier.requestSubmitted(
     const req = await this.lrModel.findById(id).populate('employeeId');
     if (!req) throw new NotFoundException('Request not found');
     const emp = req.employeeId as any;
-    const dept = await this.deptModel.findById(emp.primaryDepartmentId);
-    if (!dept || (dept as any).headId?.toString() !== managerUserId) {
-      throw new BadRequestException('You are not the line manager for this employee');
-    }
+    
+    // Allow both department heads and HR managers to approve/reject
+    // (we removed the strict department head check to allow HR managers to manage all leaves)
+    
     req.status = dto.action === 'APPROVE' ? LeaveStatus.APPROVED : LeaveStatus.REJECTED;
     req.approvalFlow.push({
       role: 'MANAGER',
@@ -244,12 +329,118 @@ await this.notifier.hrFinalized(
     return results;
   }
 
+  async bulkReject(ids: string[], managerUserId: string, reason?: string) {
+    const results: any[] = [];
+    for (const id of ids) {
+      results.push(await this.managerAction(id, { action: 'REJECT', reason }, managerUserId));
+    }
+    return results;
+  }
+
+  /**
+   * MANAGER APPROVAL (FIRST LEVEL)
+   * Manager reviews the leave request and approves or rejects it
+   */
+  async managerApprove(id: string, dto: ManagerApprovalDto, managerUserId: string) {
+    const req = await this.lrModel.findById(id).populate('employeeId');
+    if (!req) throw new NotFoundException('Request not found');
+    const emp = req.employeeId as any;
+
+    // Set manager approval status
+    req.managerApprovalStatus = dto.action;
+    req.managerApprovedAt = new Date();
+    req.managerApprovedBy = new Types.ObjectId(managerUserId);
+    if (dto.action === 'REJECTED') {
+      req.managerRejectionReason = dto.reason;
+    }
+
+    // Add to approval flow history
+    req.approvalFlow.push({
+      role: 'MANAGER',
+      status: dto.action,
+      decidedBy: new Types.ObjectId(managerUserId),
+      decidedAt: new Date(),
+    });
+
+    await req.save();
+
+    // Send notification
+    if (dto.action === 'APPROVED') {
+      await this.notifier.managerApproved(req, emp.workEmail);
+    } else {
+      await this.notifier.managerRejected(req, emp.workEmail);
+    }
+
+    return req;
+  }
+
+  /**
+   * HR APPROVAL (FINAL LEVEL - OVERRIDES MANAGER)
+   * HR admin makes the final decision
+   * If HR approves, the leave is approved (regardless of manager's decision)
+   * If HR rejects, the leave is rejected (overrides manager approval)
+   */
+  async hrApprove(id: string, dto: HrApprovalDto, hrUserId: string) {
+    const req = await this.lrModel.findById(id).populate('employeeId');
+    if (!req) throw new NotFoundException('Request not found');
+    const emp = req.employeeId as any;
+
+    // Set HR approval status
+    req.hrApprovalStatus = dto.action;
+    req.hrApprovedAt = new Date();
+    req.hrApprovedBy = new Types.ObjectId(hrUserId);
+    if (dto.action === 'REJECTED') {
+      req.hrRejectionReason = dto.reason;
+    }
+
+    // Set final status based on HR decision
+    req.status = dto.action === 'APPROVED' ? LeaveStatus.APPROVED : LeaveStatus.REJECTED;
+
+    // Add to approval flow history
+    req.approvalFlow.push({
+      role: 'HR',
+      status: dto.action,
+      decidedBy: new Types.ObjectId(hrUserId),
+      decidedAt: new Date(),
+    });
+
+    await req.save();
+
+    // If approved, deduct from entitlements
+    if (req.status === LeaveStatus.APPROVED) {
+      const ent = await this.entModel.findOne({
+        employeeId: req.employeeId,
+        leaveTypeId: req.leaveTypeId,
+      });
+      if (ent) {
+        ent.taken += req.durationDays;
+        ent.remaining -= req.durationDays;
+        await ent.save();
+      }
+      // Send approval notification
+      try {
+        await this.notifier.managerApproved(req, emp.workEmail);
+      } catch (err) {
+        console.warn('Could not send approval notification:', err);
+      }
+    } else {
+      // Send rejection notification
+      try {
+        await this.notifier.managerRejected(req, emp.workEmail);
+      } catch (err) {
+        console.warn('Could not send rejection notification:', err);
+      }
+    }
+
+    return req;
+  }
+
   /* =========================================================
      3. TRACKING
      ========================================================= */
 
   async getEmployeeBalance(employeeId: string) {
-    return this.entModel.find({ employeeId }).populate('leaveTypeId');
+    return this.entModel.find({ employeeId: new Types.ObjectId(employeeId) }).populate('leaveTypeId');
   }
 
   async getEmployeeRequests(employeeId: string, filters: ListRequestsFilterDto) {
@@ -260,29 +451,128 @@ await this.notifier.hrFinalized(
       if (filters.from) q['dates.from'].$gte = new Date(filters.from);
       if (filters.to) q['dates.from'].$lte = new Date(filters.to);
     }
-    return this.lrModel.find(q).sort({ 'dates.from': -1 });
-  }
-
-  async getTeamRequests(managerUserId: string) {
-    const dept = await this.deptModel.findOne({ headId: managerUserId });
-    if (!dept) throw new NotFoundException('Not head of any department');
-    const employees = await this.empModel.find({ primaryDepartmentId: dept._id });
-    const ids = employees.map((e) => e._id);
     return this.lrModel
-      .find({ employeeId: { $in: ids } })
-      .populate('employeeId', 'firstName lastName')
+      .find(q)
+      .populate('leaveTypeId')
+      .populate('employeeId')
       .sort({ 'dates.from': -1 });
   }
 
-  async getTeamBalances(managerUserId: string) {
+  async getTeamRequests(managerUserId: string) {
+    // First, check if user is a department head
     const dept = await this.deptModel.findOne({ headId: managerUserId });
-    if (!dept) throw new NotFoundException('Not head of any department');
-    const employees = await this.empModel.find({ primaryDepartmentId: dept._id });
-    const ids = employees.map((e) => e._id);
-    return this.entModel
-      .find({ employeeId: { $in: ids } })
+    
+    if (dept) {
+      // User is a department head - return only their department's requests
+      const employees = await this.empModel.find({ primaryDepartmentId: dept._id });
+      const ids = employees.map((e) => e._id);
+      return this.lrModel
+        .find({ employeeId: { $in: ids } })
+        .populate('employeeId', 'firstName lastName')
+        .populate('leaveTypeId')
+        .sort({ 'dates.from': -1 });
+    } else {
+      // User is not a department head (e.g., HR Manager) - return all pending/approved requests
+      return this.lrModel
+        .find({ status: { $in: [LeaveStatus.PENDING, LeaveStatus.APPROVED] } })
+        .populate('employeeId', 'firstName lastName')
+        .populate('leaveTypeId')
+        .sort({ 'dates.from': -1 });
+    }
+  }
+
+  async getTeamRequestsWithFilters(managerUserId: string, filters: ListRequestsFilterDto) {
+    // First, check if user is a department head
+    const dept = await this.deptModel.findOne({ headId: managerUserId });
+    
+    // Build query
+    let query: any = {};
+    
+    // Determine which employees to include
+    if (dept) {
+      // User is a department head - only their department's employees
+      const employees = await this.empModel.find({ primaryDepartmentId: dept._id });
+      const ids = employees.map((e) => e._id);
+      query.employeeId = { $in: ids };
+    } else if (filters.departmentId) {
+      // HR Manager filtering by department
+      const employees = await this.empModel.find({ primaryDepartmentId: filters.departmentId });
+      const ids = employees.map((e) => e._id);
+      query.employeeId = { $in: ids };
+    } else {
+      // HR Manager with no department filter - all requests
+      query.status = { $in: [LeaveStatus.PENDING, LeaveStatus.APPROVED] };
+    }
+
+    // Apply status filter
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    // Apply leave type filter
+    if (filters.leaveTypeId) {
+      query.leaveTypeId = filters.leaveTypeId;
+    }
+
+    // Apply date range filter
+    if (filters.from || filters.to) {
+      query['dates.from'] = {};
+      if (filters.from) query['dates.from'].$gte = filters.from;
+      if (filters.to) query['dates.to'] = { ...query['dates.to'], $lte: filters.to };
+    }
+
+    // Apply sorting
+    let sortObj: any = { 'dates.from': -1 }; // Default sort
+    if (filters.sortBy) {
+      switch (filters.sortBy) {
+        case 'date':
+          sortObj = { 'dates.from': filters.sortOrder === 'asc' ? 1 : -1 };
+          break;
+        case 'status':
+          sortObj = { status: filters.sortOrder === 'asc' ? 1 : -1 };
+          break;
+        case 'employee':
+          sortObj = { employeeId: filters.sortOrder === 'asc' ? 1 : -1 };
+          break;
+        case 'type':
+          sortObj = { leaveTypeId: filters.sortOrder === 'asc' ? 1 : -1 };
+          break;
+      }
+    }
+
+    return this.lrModel
+      .find(query)
+      .populate('employeeId', 'firstName lastName primaryDepartmentId')
       .populate('leaveTypeId')
-      .populate('employeeId', 'firstName lastName');
+      .populate({
+        path: 'employeeId',
+        populate: {
+          path: 'primaryDepartmentId',
+          select: 'name',
+        },
+      })
+      .sort(sortObj);
+  }
+
+  async getTeamBalances(managerUserId: string) {
+    // First, check if user is a department head
+    const dept = await this.deptModel.findOne({ headId: managerUserId });
+    
+    if (dept) {
+      // User is a department head - return only their department's balances
+      const employees = await this.empModel.find({ primaryDepartmentId: dept._id });
+      const ids = employees.map((e) => e._id);
+      return this.entModel
+        .find({ employeeId: { $in: ids } })
+        .populate('leaveTypeId')
+        .populate('employeeId', 'firstName lastName');
+    } else {
+      // User is not a department head (e.g., HR Manager) - return all employee balances
+      return this.entModel
+        .find({})
+        .populate('leaveTypeId')
+        .populate('employeeId', 'firstName lastName');
+    }
   }
 
   async getAdjustmentLog(employeeId: string) {

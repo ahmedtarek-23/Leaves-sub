@@ -19,7 +19,7 @@ import { OffboardingModule } from './offboarding/offboarding.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/hr-system'),
+    MongooseModule.forRoot(process.env.MONGODB_URI!),
     TimeManagementModule, 
     RecruitmentModule, 
     LeavesModule, 

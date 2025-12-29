@@ -40,6 +40,17 @@ export class EmployeeProfileController {
   constructor(private readonly employeeProfileService: EmployeeProfileService) { }
 
   /* =========================================================
+      Public Endpoints (for all authenticated users)
+     ========================================================= */
+
+  /* ---------- List all employees ---------- */
+  @Get()
+  async listAllEmployees() {
+    // Return all employees for dropdown menus and selections
+    return this.employeeProfileService.searchEmployees('');
+  }
+
+  /* =========================================================
       Phase III: HR/Admin Processing & Master Data
      ========================================================= */
 

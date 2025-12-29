@@ -15,6 +15,7 @@ import {
   IsObject,
   ValidateNested,
   IsEmail,
+  Matches,
 } from 'class-validator';
 import { AdjustmentType } from '../enums/adjustment-type.enum';
 import { AccrualMethod } from '../enums/accrual-method.enum';
@@ -194,11 +195,9 @@ export class AdjustBalanceDto {
    5. LEAVE REQUEST
    ========================================================= */
 class DateRangeDto {
-  @IsDate()
   @Type(() => Date)
   from: Date;
 
-  @IsDate()
   @Type(() => Date)
   to: Date;
 }
@@ -236,6 +235,30 @@ export class ApproveRejectDto {
 }
 
 /* =========================================================
+   6a. MANAGER APPROVAL (FIRST LEVEL)
+   ========================================================= */
+export class ManagerApprovalDto {
+  @IsEnum(['APPROVED', 'REJECTED'])
+  action: 'APPROVED' | 'REJECTED';
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+}
+
+/* =========================================================
+   6b. HR APPROVAL (FINAL LEVEL - OVERRIDES MANAGER)
+   ========================================================= */
+export class HrApprovalDto {
+  @IsEnum(['APPROVED', 'REJECTED'])
+  action: 'APPROVED' | 'REJECTED';
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+}
+
+/* =========================================================
    7. HR FINALIZE / OVERRIDE
    ========================================================= */
 export class HrFinalizeDto {
@@ -262,6 +285,20 @@ export class BulkApproveDto {
 }
 
 /* =========================================================
+   8b. BULK REJECT
+   ========================================================= */
+export class BulkRejectDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsMongoId({ each: true })
+  ids: string[];
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+/* =========================================================
    9. CALENDAR
    ========================================================= */
 export class CreateCalendarDto {
@@ -269,7 +306,6 @@ export class CreateCalendarDto {
   year: number;
 
   @IsArray()
-  @IsDate({ each: true })
   @Type(() => Date)
   holidays: Date[];
 
@@ -280,11 +316,9 @@ export class CreateCalendarDto {
 }
 
 class BlockedPeriodDto {
-  @IsDate()
   @Type(() => Date)
   from: Date;
 
-  @IsDate()
   @Type(() => Date)
   to: Date;
 
@@ -310,4 +344,20 @@ export class ListRequestsFilterDto {
   @Type(() => Date)
   @IsOptional()
   to?: Date;
+
+  @IsMongoId()
+  @IsOptional()
+  leaveTypeId?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  departmentId?: string;
+
+  @IsString()
+  @IsOptional()
+  sortBy?: 'date' | 'status' | 'employee' | 'type'; // 'date', 'status', 'employee', 'type'
+
+  @IsString()
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc'; // 'asc', 'desc'
 }

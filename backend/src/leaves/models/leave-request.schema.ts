@@ -37,6 +37,38 @@ export class LeaveRequest {
   @Prop({ type: Types.ObjectId, ref: 'Document' })
   attachmentId?: Types.ObjectId;
 
+  // ===== MANAGER APPROVAL (FIRST LEVEL) =====
+  @Prop({
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+  })
+  managerApprovalStatus: string;
+
+  @Prop()
+  managerApprovedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
+  managerApprovedBy?: Types.ObjectId;
+
+  @Prop()
+  managerRejectionReason?: string;
+
+  // ===== HR ADMIN APPROVAL (FINAL LEVEL - OVERRIDES MANAGER) =====
+  @Prop({
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
+  })
+  hrApprovalStatus: string;
+
+  @Prop()
+  hrApprovedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
+  hrApprovedBy?: Types.ObjectId;
+
+  @Prop()
+  hrRejectionReason?: string;
+
   // APPROVAL WORKFLOW HISTORY
   @Prop({
     type: [
@@ -56,7 +88,7 @@ export class LeaveRequest {
     decidedAt?: Date;
   }[];
 
-  // OVERALL STATUS
+  // OVERALL STATUS (FINAL STATUS - BASED ON HR APPROVAL IF REVIEWED, ELSE PENDING)
   @Prop({
     enum: LeaveStatus,
     default: LeaveStatus.PENDING,

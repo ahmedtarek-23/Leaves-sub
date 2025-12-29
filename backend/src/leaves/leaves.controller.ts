@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { LeaveService } from './leaves.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { Permissions } from '../auth/decorators/roles.decorators';
 import { Permission } from '../auth/permissions.constant';
 import { CurrentUser } from '../auth/decorators/roles.decorators';
@@ -30,20 +31,28 @@ import {
   CreateLeaveRequestDto,
   UpdateLeaveRequestDto,
   ApproveRejectDto,
+  ManagerApprovalDto,
+  HrApprovalDto,
   HrFinalizeDto,
   BulkApproveDto,
+  BulkRejectDto,
   CreateCalendarDto,
   ListRequestsFilterDto,
 } from './dto';
 
 @Controller('leaves')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class LeaveController {
   constructor(private readonly leavesService: LeaveService) {}
 
   /* =========================================================
      1. POLICY SET-UP
      ========================================================= */
+
+  @Get('categories')
+  getCategories() {
+    return this.leavesService.listCategories();
+  }
 
   @Post('types')
   @Permissions(Permission.MANAGE_LEAVES)
@@ -85,9 +94,20 @@ export class LeaveController {
     return this.leavesService.createEntitlement(dto);
   }
 
+  @Get('entitlements')
+  listEntitlements() {
+    return this.leavesService.listEntitlements();
+  }
+
   @Get('entitlements/:employeeId')
   getEntitlement(@Param('employeeId') employeeId: string) {
     return this.leavesService.getEntitlement(employeeId);
+  }
+
+  @Patch('entitlements/:id')
+  @Permissions(Permission.MANAGE_LEAVES)
+  updateEntitlement(@Param('id') id: string, @Body() dto: Partial<CreateEntitlementDto>) {
+    return this.leavesService.updateEntitlement(id, dto);
   }
 
   @Patch('entitlements/:employeeId/adjust')
@@ -98,6 +118,11 @@ export class LeaveController {
     @CurrentUser() hrUser: AuthUser,
   ) {
     return this.leavesService.manualAdjust(employeeId, dto, hrUser.userId);
+  }
+
+  @Get('calendars/:year')
+  getCalendar(@Param('year') year: string) {
+    return this.leavesService.getCalendar(parseInt(year));
   }
 
   @Post('calendars')
@@ -112,6 +137,19 @@ export class LeaveController {
 
   @Post('requests')
   submitRequest(@Body() dto: CreateLeaveRequestDto, @CurrentUser() user: AuthUser) {
+    console.log('📨 Received leave request:', {
+      leaveTypeId: dto.leaveTypeId,
+      dates: {
+        from: dto.dates.from,
+        to: dto.dates.to,
+        fromType: typeof dto.dates.from,
+        toType: typeof dto.dates.to,
+        fromIsDate: dto.dates.from instanceof Date,
+        toIsDate: dto.dates.to instanceof Date,
+      },
+      justification: dto.justification,
+      userId: user.userId,
+    });
     return this.leavesService.submitRequest(dto, user.userId);
   }
 
@@ -155,6 +193,36 @@ export class LeaveController {
     return this.leavesService.bulkApprove(dto.ids, manager.userId);
   }
 
+  @Post('requests/bulk-reject')
+  @Permissions(Permission.MANAGE_LEAVES)
+  bulkReject(@Body() dto: BulkRejectDto, @CurrentUser() manager: AuthUser) {
+    return this.leavesService.bulkReject(dto.ids, manager.userId, dto.reason);
+  }
+
+  /**
+   * TWO-LEVEL APPROVAL WORKFLOW
+   * Manager approves first, then HR admin makes the final decision
+   */
+  @Patch('requests/:id/manager-approve')
+  @Permissions(Permission.APPROVE_LEAVES)
+  managerApprove(
+    @Param('id') id: string,
+    @Body() dto: ManagerApprovalDto,
+    @CurrentUser() manager: AuthUser,
+  ) {
+    return this.leavesService.managerApprove(id, dto, manager.userId);
+  }
+
+  @Patch('requests/:id/hr-approve')
+  @Permissions(Permission.MANAGE_LEAVES)
+  hrApprove(
+    @Param('id') id: string,
+    @Body() dto: HrApprovalDto,
+    @CurrentUser() hr: AuthUser,
+  ) {
+    return this.leavesService.hrApprove(id, dto, hr.userId);
+  }
+
   /* =========================================================
      3. TRACKING
      ========================================================= */
@@ -170,13 +238,16 @@ export class LeaveController {
   }
 
   @Get('team/requests')
-  @Permissions(Permission.VIEW_TEAM_ATTENDANCE)
   teamRequests(@CurrentUser() manager: AuthUser) {
     return this.leavesService.getTeamRequests(manager.userId);
   }
 
+  @Get('team/requests/filtered')
+  teamRequestsFiltered(@CurrentUser() manager: AuthUser, @Query() filters: ListRequestsFilterDto) {
+    return this.leavesService.getTeamRequestsWithFilters(manager.userId, filters);
+  }
+
   @Get('team/balances')
-  @Permissions(Permission.VIEW_TEAM_ATTENDANCE)
   teamBalances(@CurrentUser() manager: AuthUser) {
     return this.leavesService.getTeamBalances(manager.userId);
   }

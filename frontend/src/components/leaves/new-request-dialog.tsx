@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +13,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"; // I assume Form components exist or I need to use basic html
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,19 +24,14 @@ export function NewRequestDialog({ onCheckChange }: { onCheckChange?: () => void
     const [types, setTypes] = useState<LeaveType[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Simplified form handling without full shadcn Form wrapper if check fails, 
-    // but let's assume standard shadcn form usage or just raw inputs + react-hook-form.
-    // Using standard HTML form elements with styles for simplicity if I can't verifying Form components.
-    // Actually, I saw `input.tsx`, `label.tsx`, `select.tsx`, `textarea.tsx`, `dialog.tsx` in `components/ui`.
-    // I didn't see `form.tsx`. I will use standard html form structure with ui components.
-
-    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
         defaultValues: {
             leaveTypeId: "",
             from: "",
             to: "",
             justification: "",
-        }
+        },
+        mode: "onChange",
     });
 
     useEffect(() => {
@@ -56,11 +43,13 @@ export function NewRequestDialog({ onCheckChange }: { onCheckChange?: () => void
     const onSubmit = async (data: any) => {
         try {
             setLoading(true);
+            const fromDate = new Date(data.from);
+            const toDate = new Date(data.to);
             await leavesService.submitRequest({
                 leaveTypeId: data.leaveTypeId,
                 dates: {
-                    from: new Date(data.from),
-                    to: new Date(data.to),
+                    from: fromDate.toISOString(),
+                    to: toDate.toISOString(),
                 },
                 justification: data.justification,
             });
@@ -91,18 +80,30 @@ export function NewRequestDialog({ onCheckChange }: { onCheckChange?: () => void
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Leave Type</label>
-                        <Select onValueChange={(val) => setValue("leaveTypeId", val)} required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {types.map((t) => (
-                                    <SelectItem key={t._id} value={t._id}>
-                                        {t.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Controller
+                            name="leaveTypeId"
+                            control={control}
+                            rules={{ required: "Leave type is required" }}
+                            render={({ field }) => (
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select leave type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-50">
+                                        {types.length > 0 ? (
+                                            types.map((t) => (
+                                                <SelectItem key={t._id} value={t._id}>
+                                                    {t.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-sm text-gray-500">No leave types available</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        {errors.leaveTypeId && <span className="text-red-500 text-sm">{errors.leaveTypeId.message}</span>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

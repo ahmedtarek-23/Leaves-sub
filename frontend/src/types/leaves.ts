@@ -78,14 +78,28 @@ export interface DateRange {
 
 export interface LeaveRequest {
   _id: string;
-  employeeId: string;
+  employeeId: string | any;
   leaveTypeId: string | LeaveType;
   leavePolicyId?: string;
   status: LeaveStatus;
   dates: DateRange;
-  totalDays: number;
+  durationDays: number;
+  totalDays?: number;
   justification?: string;
   attachmentId?: string;
+  
+  // TWO-LEVEL APPROVAL WORKFLOW
+  managerApprovalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  managerApprovedAt?: string;
+  managerApprovedBy?: string;
+  managerRejectionReason?: string;
+  
+  hrApprovalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  hrApprovedAt?: string;
+  hrApprovedBy?: string;
+  hrRejectionReason?: string;
+  
+  // Legacy fields (can be removed later)
   managerApproval?: {
     managerId: string;
     status: LeaveStatus;
@@ -146,8 +160,8 @@ export interface CreateEntitlementDto {
 export interface CreateLeaveRequestDto {
   leaveTypeId: string;
   dates: {
-    from: string | Date;
-    to: string | Date;
+    from: string;
+    to: string;
   };
   justification?: string;
   attachmentId?: string;
